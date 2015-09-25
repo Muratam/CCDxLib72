@@ -1,0 +1,2 @@
+# CCDxLib72
+DxLibのCocosバージョンだよ！
