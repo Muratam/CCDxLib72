@@ -1,2 +1,3 @@
 # CCDxLib72
 DxLibのCocosバージョンだよ！
+Classesの中身を自分のCocosのClassesの中身と書き換えて使ってね！
