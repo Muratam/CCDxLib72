@@ -56,8 +56,10 @@ bool AppDelegate::applicationDidFinishLaunching() {
     // create a scene. it's an autorelease object
 	
 	auto scene = CCDxLib::createScene(this);
-    director->runWithScene(scene);
-    return true;
+	director->runWithScene(scene);
+	if (SetBackGroundColorR != -72 && SetBackGroundColorG != -72 && SetBackGroundColorB != -72)Get_m_dxlib()->SetBackgroundColor(SetBackGroundColorR, SetBackGroundColorG, SetBackGroundColorB);
+	Get_m_dxlib()->EMULATE_TOUCH_BY_MOUSEFUNCTIONS(BeforeDxInitEmulateTouchByMouseFunctions);
+	return true;
 }
 
 // This function will be called when the app is inactive. When comes a phone call,it's be invoked too
@@ -65,15 +67,16 @@ void AppDelegate::applicationDidEnterBackground() {
     Director::getInstance()->stopAnimation();
 
     // if you use SimpleAudioEngine, it must be pause
-    // SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
+	//isPlayingBGM = SimpleAudioEngine::getInstance()->isBackgroundMusicPlaying();
+	//if (isPlayingBGM)SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
 }
 
 // this function will be called when the app is active again
 void AppDelegate::applicationWillEnterForeground() {
     Director::getInstance()->startAnimation();
 
-    // if you use SimpleAudioEngin3e, it must resume here
-    // SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
+    // if you use SimpleAudioEngine, it must resume here
+    //if(isPlayingBGM)SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
 }
 
 
@@ -91,6 +94,15 @@ int AppDelegate::ChangeWindowMode(int Flag){
 int AppDelegate::SetMainWindowText(char *WindowText){
 	if (hasDxInited){}
 	ViewName = WindowText;
+	return 0;
+}
+void AppDelegate::EMULATE_TOUCH_BY_MOUSEFUNCTIONS(bool Emulate){
+	BeforeDxInitEmulateTouchByMouseFunctions = Emulate;
+}
+int AppDelegate::SetBackgroundColor(int Red, int Green, int Blue){
+	SetBackGroundColorR = Red;
+	SetBackGroundColorG = Green;
+	SetBackGroundColorB = Blue;
 	return 0;
 }
 

@@ -38,16 +38,20 @@ public:
 private:
 		
 	bool hasDxInited = false;
+	bool isPlayingBGM = false;
 	std::string ViewName = "CCDxLib";
 	virtual void CCDxInit();
-	//DxLib_Init()ÇåƒÇ‘ëOÇ…ê›íËÇ∑ÇÈä÷êîÇÕÇ±Ç±Ç≈AooDelegateÇÃä÷êîÇ∆ÇµÇƒíËã`Ç∑ÇÈ
-	int SetGraphMode(int SizeX, int SizeY, int Dummy = 32);
-	const int  DX_CHANGESCREEN_OK = 0;
-	int ChangeWindowMode(int Flag);
+	bool BeforeDxInitEmulateTouchByMouseFunctions = false;
 	bool isWindowed = false;
+	const int DX_CHANGESCREEN_OK = 0;
 	const int DX_CHANGESCREEN_RETURN = 1;
 	const int DX_CHANGESCREEN_DEFAULT = 2;
+	int SetGraphMode(int SizeX, int SizeY, int Dummy = 32);
+	int ChangeWindowMode(int Flag);
+	int SetBackgroundColor(int Red, int Green, int Blue);
+	void EMULATE_TOUCH_BY_MOUSEFUNCTIONS(bool Emulate = true);
 public:
+	int SetBackGroundColorR = -72, SetBackGroundColorB = -72, SetBackGroundColorG = -72;
 	int SetMainWindowText(char *WindowText);
 };
 

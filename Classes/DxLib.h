@@ -3,7 +3,7 @@
 
 #include "cocos2d.h"
 #include "AppDelegate.h"
-
+#include "ui/CocosGUI.h"
 #include "SimpleAudioEngine.h"
 using namespace CocosDenshion;
 using namespace cocos2d;
@@ -33,6 +33,7 @@ const long double __Pi = 3.14159265358979323846264338327950288L;
 #define LOBYTE(w) ((unsigned char)(((unsigned long)(w)) & 0xff))
 #endif
 
+
 struct DATEDATA{
 	
 	int Year = 2000; 	// ”N
@@ -46,9 +47,6 @@ struct DATEDATA{
 
 class CCDxLib : public cocos2d::Layer{
 private:
-	//typedef std::pair<bool, std::string> MusicHandle;
-	//bool MusicHandle::* mpisBGM = &MusicHandle::first;
-	//std::string MusicHandle::* mpFileName = &MusicHandle::second;
 	struct MusicHandle{
 		bool isBGM ;
 		std::string FileName;
@@ -59,19 +57,29 @@ private:
 			FileName = _FileName;
 		}
 	};
+	struct DxTouch{
+		int X = 0,Y = 0,ID = 0;
+		DxTouch(int x,int y,int id){
+			X = x; Y = y; ID = id;
+		}
+	};
 
 public:
 	static Scene* createScene(AppDelegate * app);
 	virtual bool init();
 	void update(float delta);
-	void menuCloseCallback(Ref* pSender);
 	void onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event);
 	void onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event);
 	void onMouseDown(Event* evt);
 	void onMouseUp(Event* evt);
 	void onMouseMove(Event* evt);
 	void onMouseScroll(Event* evt);
-
+	void onTouchesBegan    (const std::vector<Touch*>& touches, Event *pEvent);
+	void onTouchesMoved    (const std::vector<Touch*>& touches, Event *pEvent);
+	void onTouchesEnded    (const std::vector<Touch*>& touches, Event *pEvent);
+	void onTouchesCancelled(const std::vector<Touch*>& touches, Event *pEvent);
+	void EmulateButtonEnterCallback(int KeyCode);
+	void EmulateButtonExitCallback(int KeyCode);
 	CREATE_FUNC(CCDxLib);
 
 private:
@@ -94,38 +102,132 @@ private:
 		Color3B color = FromUnsignedIntColor(icolor);
 		return FromColor3B(color.r,color.g,color.b);
 	}
+	inline int GetGraphSizeX(int GrHandle){return Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle])->getContentSize().width; }
+	inline int GetGraphSizeY(int GrHandle){ return Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle])->getContentSize().height; }
+	
+	
+	class SpritePOOL : public Sprite {
+	public://For DISARROW 
+		SpritePOOL() :Sprite(){};
+		SpritePOOL(const SpritePOOL &){};
+		SpritePOOL &operator =(const SpritePOOL &){};
+	};
+	std::vector<SpritePOOL> SpritePool;
+	int sppindex = 0;
+	
+	
+	std::vector<SpritePOOL> textSpritePool;
+	int txtsppindex = 0;
+	class TextTexture2DCache : public Texture2D{
+	public :
+		TextTexture2DCache() : Texture2D(){};
+		TextTexture2DCache(const TextTexture2DCache &){};// TextTexture2DCache();};
+		static const int textTextureCacheSize = 255;
+		int FontSize = 0;
+		std::string FontName = "";
+		bool UsedBeforeScreenFlip = false;
+		inline bool isSame(//std::string _String,
+			int _FontSize, std::string _FontName){
+			return FontSize == _FontSize && FontName == _FontName;
+		}
+		inline bool isEmpty(){ return FontSize == 0; }
+		bool initWithString(const char *text, const FontDefinition& textDefinition){
+			FontSize = textDefinition._fontSize;
+			FontName = textDefinition._fontName;
+			return Texture2D::initWithString(text, textDefinition);
+		}
+	};
+	TextTexture2DCache textTextureCacheVec[TextTexture2DCache::textTextureCacheSize];
+	std::unordered_multimap <std::string, TextTexture2DCache *> textTextureCache;
+	
+	/*
+	class TextCache : public Label{
+	public:
+		TextCache(TextHAlignment hAlignment = TextHAlignment::LEFT,
+			TextVAlignment vAlignment = TextVAlignment::TOP)
+			: Label(hAlignment, vAlignment){};
+		TextCache(const TextCache &){};
+		static const int CacheSize = 255;
+		bool UsedBeforeScreenFlip = false;
+		bool Empty = true;
+		inline bool isSame(	int _FontSize, std::string _FontName){
+			return _systemFontSize == _FontSize && this->getSystemFontName() == _FontName;
+		}
+		static TextCache* createWithSystemFont(const std::string& text, const std::string& font, float fontSize){
+			auto ret = new (std::nothrow) TextCache(TextHAlignment::LEFT, TextVAlignment::TOP);
+			if (ret){
+				ret->setSystemFontName(font);
+				ret->setSystemFontSize(fontSize);
+				ret->setDimensions(Size::ZERO.width, Size::ZERO.height);
+				ret->setString(text);
+				ret->autorelease();
+				ret->retain();
+				return ret;
+			}
+			delete ret;
+			return nullptr;
+		}
+	};
+	std::unordered_multimap <std::string, TextCache *>TextCaches;
+	*/
+	//For Experiment
+	//void VISIT(Sprite* image);
+	//std::vector<TrianglesCommand> TrianglesCommands;
+	//TrianglesCommand _trianglesCommand;
+	//TrianglesCommand trian[1000];
+	//int trianIndex = 0;
+	//Label* label2;
+
 	void InitMembers();
 	Sprite* CheckGetSprite(int GrHandle);
 	bool CheckMusicHandle(int index);
 	int KeyMap(cocos2d::EventKeyboard::KeyCode KeyCode);
 	int KeyReverseMap(int Key);
+	std::string KeyName(cocos2d::EventKeyboard::KeyCode KeyCode);
 	std::vector<std::string> GraphicHandles;
 	std::vector <MusicHandle> MusicHandles;
 	std::string CurrentPlayedBGMName;
+	std::list <DxTouch> DxTouches;
 	Size visibleSize;
 	Vec2 origin;
 	DrawNode* drawNode;
-	int FontSize = 32;
-	std::string FontName = "arial.ttf";
+	Label* text;
 	int SoundDataType = DX_SOUNDDATATYPE_MEMNOPRESS ;
 	SimpleAudioEngine* simpleAudioEngine;
 	TextureCache* textureCache;
+	RenderTexture* rendertexture;
+	bool RenderEnded = false;
+	bool RenderBegan = false;
 	bool KeyPushed[100];
 	bool MousePushed[8];
 	int MouseX = 0, MouseY = 0;
+	int SetBackGroundColorR = 0, SetBackGroundColorB = 0, SetBackGroundColorG = 0;
+	int LastTouchX = 0, LastTouchY = 0;
 	float ScrollVal = 0;
 	float CurrentScrollVal = 0;
+	//Acceleration al;
+	bool EmulateTouchByMouseFunctions = false;
+	int EmulateButtonNum = 0;
+	bool EmulateKeyBoardBySingleTouch = false;
+	int EmulateKeyBoardBySingleTouchKeyCode = 0;
+#define USE_EMULATE_BUTTON_DEFAULT_POSITION -7272
+
 public:
+	int SetBackgroundColor(int Red, int Green, int Blue);
 	int LoadGraphScreen(int x, int y, char *GraphName, int TransFlag = TRUE);
 	int LoadGraph(char *FileName);
-	int DrawGraph(int x, int y, int GrHandle, int TransFlag = TRUE);
+	int ScreenFlip();
 	int ClearDrawScreen();
-	int DrawTurnGraph(int x, int y,	int GrHandle, int TransFlag = TRUE);
+	int GetGraphSize(int GrHandle, int *SizeXBuf, int *SizeYBuf);
+
+	int DrawGraph(int x, int y, int GrHandle, int TransFlag = TRUE);
+	int DrawTurnGraph(int x, int y, int GrHandle, int TransFlag = TRUE);
 	int DrawExtendGraph(int x1, int y1, int x2, int y2,	int GrHandle, int TransFlag = TRUE);
 	int DrawRotaGraph(int x, int y, double ExtRate, double Angle, int GrHandle, int TransFlag = TRUE, int TurnFlag = FALSE);
 	int DrawRotaGraph2(int x, int y, int cx, int cy, double ExtRate, double Angle, int GrHandle, int TransFlag = TRUE, int TurnFlag = FALSE);
 	int DrawRotaGraph3(int x, int y,int cx, int cy,double ExtRateX, double ExtRateY,double Angle, int GrHandle, int TransFlag = TRUE, int TurnFlag = FALSE);
 	int DrawRectGraph(int DestX, int DestY,	int SrcX, int SrcY, int Width, int Height, int GraphHandle, int TransFlag= TRUE, int TurnFlag = FALSE);
+	
 	unsigned int GetColor(int Red, int Green, int Blue);
 	int DrawLine(int x1, int y1, int x2, int y2, unsigned int Color);
 	int DrawBox(int x1, int y1, int x2, int y2, unsigned int Color, int FillFlag);
@@ -135,7 +237,7 @@ public:
 	int DrawPixel(int x, int y, unsigned int Color);
 	int DrawString(int x, int y, char *String, unsigned int Color);
 	int SetFontSize(int FontSize); 
-	int ChangeFont(char *FontName);
+	//int ChangeFont(char *FontName);
 	
 	///////////////////////////////////YET//////////////////////////
 	int SetCreateSoundDataType(int SoundDataType);
@@ -163,17 +265,17 @@ public:
 	int CheckHitKey(int KeyCode);
 	int CheckHitKeyAll();
 	int GetHitKeyStateAll(char *KeyStateBuf);
-	
 	int SetMouseDispFlag(int DispFlag);
 	int GetMousePoint(int *XBuf, int *YBuf);
-	int GetMouseInput(void);
-	int GetMouseWheelRotVol(void);
+	int GetMouseInput();
+	int GetMouseWheelRotVol();
+	int GetTouchInputNum();
+	int GetTouchInput(int InputNo, int *PositionX, int *PositionY, int *ID, int *Device);
+	void EMULATE_TOUCH_BY_MOUSEFUNCTIONS(bool Emulate = true);
+	void EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode, char* ButtonFileName, int PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION, int PositionY = USE_EMULATE_BUTTON_DEFAULT_POSITION,bool WriteKeyName = false);
+	void EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode);
 
-	
-	//int GetTouchInputNum(void);
-	//int GetTouchInput(int InputNo, int *PositionX, int *PositionY, int *ID, int *Device);
-
-	int GetMouseInputLog(int *Button, int *ClickX, int *ClickY, int LogDelete);
+	//int GetMouseInputLog(int *Button, int *ClickX, int *ClickY, int LogDelete);
 	//int LoadDivGraph(char *FileName, int AllNum,int XNum, int YNum,int XSize, int YSize, int *HandleBuf);
 };
 
@@ -181,10 +283,12 @@ public:
 CCDxLib* Get_m_dxlib();
 
 #define MKCCDxFN(T,FN,PARAMS,ARGS)inline T FN PARAMS { return Get_m_dxlib()-> FN ARGS;}
+MKCCDxFN(int, SetBackgroundColor, (int Red, int Green, int Blue), (Red, Green, Blue))
 MKCCDxFN(int, LoadGraphScreen, (int x, int y, char *GraphName, int TransFlag = TRUE), (x, y, GraphName, TransFlag))
 MKCCDxFN(int, LoadGraph, (char *FileName), (FileName))
-MKCCDxFN(int, DrawGraph, (int x, int y, int GrHandle, int TransFlag = TRUE), (x, y, GrHandle, TransFlag))
 MKCCDxFN(int, ClearDrawScreen, (), ())
+MKCCDxFN(int, GetGraphSize, (int GrHandle, int *SizeXBuf, int *SizeYBuf), (GrHandle, SizeXBuf, SizeYBuf))
+MKCCDxFN(int, DrawGraph, (int x, int y, int GrHandle, int TransFlag = TRUE), (x, y, GrHandle, TransFlag))
 MKCCDxFN(int, DrawTurnGraph, (int x, int y, int GrHandle, int TransFlag = TRUE), (x, y, GrHandle, TransFlag))
 MKCCDxFN(int, DrawExtendGraph, (int x1, int y1, int x2, int y2, int GrHandle, int TransFlag = TRUE), (x1, y1, x2, y2, GrHandle, TransFlag))
 MKCCDxFN(int, DrawRotaGraph, (int x, int y, double ExtRate, double Angle, int GrHandle, int TransFlag = TRUE, int TurnFlag = FALSE), (x, y, ExtRate, Angle, GrHandle, TransFlag, TurnFlag))
@@ -201,7 +305,7 @@ MKCCDxFN(int, DrawPixel, (int x, int y, unsigned int Color), (x, y, Color))
 MKCCDxFN(int, DrawString, (int x, int y, char *String, unsigned int Color), (x, y, String, Color))
 int DrawFormatString(int x, int y, unsigned int Color, char *FormatString, ...);
 MKCCDxFN(int, SetFontSize, (int FontSize), (FontSize))
-MKCCDxFN(int, ChangeFont, (char *FontName), (FontName))
+//MKCCDxFN(int, ChangeFont, (char *FontName), (FontName))
 MKCCDxFN(int ,GetNowCount,(),())
 MKCCDxFN(long long ,GetNowHiPerformanceCount,(),())
 MKCCDxFN(int, GetDateTime,(DATEDATA *DateBuf),(DateBuf))
@@ -214,6 +318,10 @@ MKCCDxFN(int, SetMouseDispFlag, (int DispFlag), (DispFlag))
 MKCCDxFN(int, GetMousePoint,(int *XBuf, int *YBuf), (XBuf,YBuf))
 MKCCDxFN(int, GetMouseInput, (), ())
 MKCCDxFN(int, GetMouseWheelRotVol, (), ())
+MKCCDxFN(int, GetTouchInputNum, (), ())
+MKCCDxFN(int, GetTouchInput, (int InputNo, int *PositionX, int *PositionY, int *ID, int *Device), (InputNo, PositionX,PositionY,ID,Device))
+MKCCDxFN(void, EMULATE_TOUCH_BY_MOUSEFUNCTIONS,(bool Emulate = true),(Emulate))
+
 int DxLib_End();
 
 

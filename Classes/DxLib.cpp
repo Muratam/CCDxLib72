@@ -1,5 +1,8 @@
 #include "DxLib.h"
 #include <stdarg.h>
+#include <algorithm>
+#include <iostream>
+#pragma execution_character_set("utf-8")
 
 //日本語が文字化けする場合はこれを定義して、UTF-8にしてください。
 //#pragma execution_character_set("utf-8")
@@ -23,26 +26,18 @@ bool CCDxLib::init(){
     if ( !Layer::init() )return false;
 	for (int i = 0; i < 100; i++)KeyPushed[i] = false;
 	for (int i = 0; i < 8; i++)MousePushed[i] = false;
-    this->visibleSize = Director::getInstance()->getVisibleSize();
+    this->visibleSize = Director::getInstance()->getWinSize();
 	this->origin = Director::getInstance()->getVisibleOrigin();
-
-	//auto closeItem = MenuItemImage::create("CloseNormal.png", "CloseSelected.png", CC_CALLBACK_1(CCDxLib::menuCloseCallback, this));
-	//closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width/2 ,origin.y + closeItem->getContentSize().height/2));
-    //auto menu = Menu::create(closeItem, nullptr);
-    //menu->setPosition(Vec2::ZERO);
-    //this->addChild(menu, 1);
-
-    //auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
-    //label->setPosition(Vec2(origin.x + visibleSize.width/2,origin.y + visibleSize.height - label->getContentSize().height));
-    //this->addChild(label, 1);
-
-	
-	auto _bg2 = LayerColor::create(Color4B(255, 255, 255, 255), visibleSize.width, visibleSize.height);
-	this->addChild(_bg2);
 	
 	m_dxlib = this;
 	simpleAudioEngine = SimpleAudioEngine::getInstance();
 	textureCache = Director::getInstance()->getTextureCache();
+	rendertexture = RenderTexture::create(visibleSize.width, visibleSize.height);
+	rendertexture->setPosition(visibleSize.width/2,visibleSize.height/2);
+	rendertexture->retain();
+	this->addChild(rendertexture);
+	rendertexture->beginWithClear((float)SetBackGroundColorR / 255.0, (float)SetBackGroundColorG / 255.0, (float)SetBackGroundColorB / 255.0, 1.0);
+	RenderBegan = true;
 
 	auto keylistener = EventListenerKeyboard::create();
 	keylistener->onKeyPressed = CC_CALLBACK_2(CCDxLib::onKeyPressed, this);
@@ -55,6 +50,15 @@ bool CCDxLib::init(){
 	mouseListener->onMouseMove = CC_CALLBACK_1(CCDxLib::onMouseMove, this);
 	mouseListener->onMouseScroll = CC_CALLBACK_1(CCDxLib::onMouseScroll, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(mouseListener,this);
+	
+	auto touchlistener = EventListenerTouchAllAtOnce::create();
+	touchlistener->onTouchesBegan = CC_CALLBACK_2(CCDxLib::onTouchesBegan, this);
+	touchlistener->onTouchesMoved = CC_CALLBACK_2(CCDxLib::onTouchesMoved, this);
+	touchlistener->onTouchesCancelled = CC_CALLBACK_2(CCDxLib::onTouchesCancelled, this);
+	touchlistener->onTouchesEnded = CC_CALLBACK_2(CCDxLib::onTouchesEnded, this);
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(touchlistener, this);
+
+
 	InitMembers();
 
 	CCDxStart();
@@ -64,12 +68,27 @@ bool CCDxLib::init(){
 
 void CCDxLib::InitMembers(){
 	drawNode = DrawNode::create();
-	this->addChild(drawNode);
+	drawNode->retain();
+	text = Label::createWithSystemFont("", "arial.ttf", 48);
+	text->setAnchorPoint(Vec2(0, 1));
+	text->retain();
 
+	/*
+	auto label2 = Label::createWithTTF("012345678", "fonts/Marker Felt.ttf", 32);
+	label2->setPosition(Point(origin.x, origin.y + visibleSize.height - 80));
+	label2->setAlignment(TextHAlignment::LEFT);
+	label2->setAnchorPoint(Point(0.0f, 0.0f));
+	label2->setString("ui0022");
+	this->addChild(label2);
+	*/
 }
 
 int DxLib_End(){
-	Director::getInstance()->end(); return 0; 
+	Director::getInstance()->end(); 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
+	exit(0);
+#endif
+	return 0; 
 }
 
 
@@ -79,91 +98,118 @@ void CCDxLib::update(float delta){
 }
 
 
-void CCDxLib::menuCloseCallback(Ref* pSender){
-    Director::getInstance()->end();
-
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
-    exit(0);
-#endif
-}
-
-
 /////////////////////////////////////////////////
 //////////////////CCDxLib////////////////////////
 /////////////////////////////////////////////////
-//ソートの問題
+
 CCDxLib* Get_m_dxlib(){ return m_dxlib; }
+
+int CCDxLib::SetBackgroundColor(int Red, int Green, int Blue){
+	SetBackGroundColorR = SetBackGroundColorR = Red;
+	SetBackGroundColorG = SetBackGroundColorG = Green;
+	SetBackGroundColorB = SetBackGroundColorB = Blue;
+	
+	return 0;
+}
 
 int CCDxLib::LoadGraphScreen(int x, int y, char *GraphName, int TransFlag){
 	int h = this->LoadGraph(GraphName);
 	if (h == -1)return -1;
-	return this->DrawGraph(x,y,h,TransFlag);
+	if(DrawGraph(x,y,h,TransFlag) == -1)return -1 ;
+	return ScreenFlip();
+
 }
 
 int CCDxLib::LoadGraph(char *FileName){	
-	//batchNodeを使用すると、描画順序を指定できないのでダメでした。
-	//auto batchNode = SpriteBatchNode::create(FileName);if (batchNode == nullptr) return -1;this->addChild(batchNode);this->GraphicVector.push_back(batchNode);return this->GraphicVector.size() - 1;
-	//auto batchNode = this->GraphicVector[GrHandle];if (batchNode == nullptr) return -1;auto image = Sprite::createWithTexture(batchNode->getTexture());image->setPosition(DxVec2(x + image->getContentSize().width / 2, y + image->getContentSize().height / 2));image->setGlobalZOrder(--SortOrder);batchNode->addChild(image);
-	//for (auto bn : GraphicVector) bn->removeAllChildren();
-	//逆に、v3から追加されたautobatchingがあるのでこの実装でもGLCallは増えないので安心!
 
+	//SpriteHandles.push_back( Sprite::create(FileName));
+	//SpriteHandles[SpriteHandles.size() - 1]->retain();
+	//return SpriteHandles.size() - 1;
+
+	
 	textureCache->addImage(FileName);
 	auto texture = textureCache->getTextureForKey(FileName);
 	if (texture == nullptr) return -1;
 	GraphicHandles.push_back(FileName);
 	return GraphicHandles.size() - 1;
+	
 }
 
 Sprite* CCDxLib::CheckGetSprite(int GrHandle){
+	//if (GrHandle < 0 || (unsigned int)GrHandle > SpriteHandles.size()) return nullptr;
+	//else return SpriteHandles[GrHandle];
+
+	if (GrHandle < 0 || (unsigned int)GrHandle > GraphicHandles.size()) return nullptr;
+	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
+	
+	if (sppindex >= (int)SpritePool.size()){
+		SpritePOOL spr;
+		SpritePool.push_back(spr);
+	}
+	SpritePool[sppindex].initWithTexture(texture);
+	sppindex++;
+	if (texture == nullptr) return nullptr;
+	else return &SpritePool[sppindex-1];
+	
+	/*
 	if (GrHandle < 0 || (unsigned int)GrHandle > GraphicHandles.size()) return nullptr;
 	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
 	if (texture == nullptr) return nullptr;
 	else return Sprite::createWithTexture(texture);
+	*/
 }
 
-int CCDxLib::DrawGraph(int x, int y, int GrHandle, int TransFlag){
-	auto image = CheckGetSprite(GrHandle);
-	if (image == nullptr)return -1;
-	image->setPosition(DxVec2(x + image->getContentSize().width / 2	, y + image->getContentSize().height / 2));
-	this->addChild(image);
+int CCDxLib::ScreenFlip(){
+	drawNode->visit();
+	if (!RenderEnded){
+		rendertexture->end();
+	}
+	for (auto& t : textTextureCache){ t.second->UsedBeforeScreenFlip = false; }
+	//for (auto& t : TextCaches){ t.second->UsedBeforeScreenFlip = false; }
+	RenderEnded = true;
+	RenderBegan = false;
 	return 0;
 }
 
 int CCDxLib::ClearDrawScreen(){
-	this->removeAllChildrenWithCleanup(true);
-	InitMembers();
+	if (!RenderBegan){
+		drawNode->clear();
+		rendertexture->beginWithClear((float)SetBackGroundColorR / 255.0, (float)SetBackGroundColorG / 255.0, (float)SetBackGroundColorB / 255.0, 1.0);
+		sppindex=0;
+		txtsppindex = 0;
+	}
+	RenderBegan = true;
+	RenderEnded = false;
 	return 0;
+}
+
+int CCDxLib::GetGraphSize(int GrHandle, int *SizeXBuf, int *SizeYBuf){
+	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
+	if (texture == nullptr) return -1;
+	*SizeXBuf = texture->getContentSize() .width;
+	*SizeYBuf = texture->getContentSize().height;
+	return 0;
+}
+
+int CCDxLib::DrawGraph(int x, int y, int GrHandle, int TransFlag){
+	return DrawRotaGraph3(x, y, 0, 0,1.0, 1.0, 0.0, GrHandle, TransFlag, false);
 }
 
 int CCDxLib::DrawTurnGraph(int x, int y, int GrHandle, int TransFlag){
-	auto image = CheckGetSprite(GrHandle);
-	if (image == nullptr)return -1;
-	image->setPosition(DxVec2(x + image->getContentSize().width / 2 , y + image->getContentSize().height / 2));
-	image->setFlippedX(true);
-	this->addChild(image);
-	return 0;
+	return DrawRotaGraph3(x, y, 0, 0, 1.0, 1.0, 0.0, GrHandle, TransFlag, true);
 }
 
 int CCDxLib::DrawExtendGraph(int x1, int y1, int x2, int y2, int GrHandle, int TransFlag){
-	auto image = CheckGetSprite(GrHandle);
-	if (image == nullptr)return -1;
-	auto size = image->getContentSize();
-	image->setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
-	image->setScale((float)(x2 - x1) / size.width, (float)(y2 - y1) / size.height);
-	image->setPosition(DxVec2(x1,y1));
-	this->addChild(image);
-	return 0;
+	return DrawRotaGraph3(x1, y1, 0, 0,
+		(float)(x2 - x1) / GetGraphSizeX(GrHandle), 
+		(float)(y2 - y1) / GetGraphSizeY(GrHandle), 
+		0, GrHandle, TransFlag, false);
 }
 
 int CCDxLib::DrawRotaGraph(int x, int y, double ExtRate, double Angle, int GrHandle, int TransFlag, int TurnFlag){
-	auto image = CheckGetSprite(GrHandle);
-	if (image == nullptr)return -1;
-	image->setPosition(DxVec2(x,y));
-	image->setScale(ExtRate);
-	image->setRotation(FromRadian(Angle));
-	image->setFlippedX(TurnFlag == TRUE);
-	this->addChild(image);
-	return 0;
+	int w,h;
+	GetGraphSize(GrHandle,&w,&h);
+	return DrawRotaGraph3(x+w/2,y+h/2,w/2.0,h/2.0,ExtRate,ExtRate,Angle,GrHandle,TransFlag,TurnFlag);
 }
 
 int CCDxLib::DrawRotaGraph2(int x, int y, int cx, int cy, double ExtRate, double Angle, int GrHandle, int TransFlag, int TurnFlag){
@@ -174,25 +220,28 @@ int CCDxLib::DrawRotaGraph3(int x, int y, int cx, int cy, double ExtRateX, doubl
 	auto image = CheckGetSprite(GrHandle);
 	if (image == nullptr)return -1;
 	auto size = image->getContentSize();
+	//image->setTextureRect(Rect(0,0,size.width,size.height));
 	image->setPosition(DxVec2(x, y));
 	image->setAnchorPoint(Vec2((float)(cx) / size.width, (float)(size.height - cy) / size.height));
 	image->setScale(ExtRateX,ExtRateY);
 	image->setRotation(FromRadian(Angle));
 	image->setFlippedX(TurnFlag == TRUE);
-	this->addChild(image);
+	image->visit();
+	
 	return 0;
 }
 
 int CCDxLib::DrawRectGraph(int DestX, int DestY, int SrcX, int SrcY, int Width, int Height, int GrHandle, int TransFlag, int TurnFlag){
-	if (GrHandle < 0 || (unsigned int )GrHandle > GraphicHandles.size()) return nullptr;
-	auto texture = textureCache->getTextureForKey(GraphicHandles[GrHandle]);
-	if (texture == nullptr) return nullptr;
-	auto size = texture->getContentSize();
-	auto image = Sprite::createWithTexture(texture,Rect(SrcX,SrcY,Width,Height));
-	image->setPosition(DxVec2(DestX + image->getContentSize().width / 2, DestY + image->getContentSize().height / 2));
-	image->setFlippedX(TurnFlag == TRUE);
+	auto image = CheckGetSprite(GrHandle);
 	if (image == nullptr)return -1;
-	this->addChild(image);
+	auto size = image->getContentSize();
+	image->setTextureRect(Rect(SrcX, SrcY, Width, Height));
+	image->setPosition(DxVec2(DestX,DestY));
+	image->setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
+	image->setScale(1,1);
+	image->setRotation(0);
+	image->setFlippedX(TurnFlag == TRUE);
+	image->visit();
 	return 0;
 }
 
@@ -205,7 +254,6 @@ int CCDxLib::DrawLine(int x1, int y1, int x2, int y2, unsigned int Color){
 	drawNode->drawSegment(DxVec2(x1,y1), DxVec2(x2,y2), 0.5f,DxColor(Color));
 	return 0;
 }
-
 int CCDxLib::DrawBox(int x1, int y1, int x2, int y2, unsigned int Color, int FillFlag){
 	int  _x1 = x1,_y1 = y1,  _x2 = x2 - 1, _y2 = y2 - 1;
 	if (FillFlag == FALSE)
@@ -214,7 +262,6 @@ int CCDxLib::DrawBox(int x1, int y1, int x2, int y2, unsigned int Color, int Fil
 		drawNode->drawSolidRect(DxVec2(_x1, _y1), DxVec2(_x2, _y2), DxColor(Color));
 	return 0;
 }
-
 int CCDxLib::DrawCircle(int x, int y, int r, unsigned int Color, int FillFlag, unsigned int segment){
 	if (FillFlag == FALSE)
 		drawNode->drawCircle(DxVec2(x,y),r,__Pi*2,segment,false,DxColor(Color));
@@ -231,7 +278,6 @@ int CCDxLib::DrawOval(int x, int y, int rx, int ry, unsigned int Color, int Fill
 	return 0;
 	
 }
-
 int CCDxLib::DrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, unsigned int Color, int FillFlag){
 	Vec2 DxVecs[] = { DxVec2(x1, y1), DxVec2(x2, y2), DxVec2(x3, y3) };
 	if (FillFlag == FALSE)
@@ -247,12 +293,111 @@ int CCDxLib::DrawPixel(int x, int y, unsigned int Color){
 
 
 int CCDxLib::DrawString(int x, int y, char *String, unsigned int Color){
-	auto text = Label::createWithSystemFont (String, FontName, 48);
+	if (x >= visibleSize.width || y >= visibleSize.height || String == "") return 0;
+	
+
+	/*
+	Label* TargetText;
+	bool NeedUpdate = true;
+	int count = TextCaches.count(String);
+	auto itr = TextCaches.find(String);
+	
+	for (int i = 0; i < count; i++){//SearchCache
+		if (itr->second->isSame(text->getSystemFontSize(), text->getSystemFontName())){
+			TargetText = itr->second;
+			NeedUpdate = false;
+			itr->second->UsedBeforeScreenFlip = true;
+			break;
+		}
+		itr++;
+	}
+	if (NeedUpdate){//MakeCache
+		if (TextCaches.size() < TextCache::CacheSize - 1){
+			auto T = TextCache::createWithSystemFont(String,text->getSystemFontName(),text->getSystemFontSize());
+			T->UsedBeforeScreenFlip = true;
+			TextCaches.insert(std::make_pair(String, T));
+			TargetText = T;
+		}
+		else {//UpdateCache
+			for (auto itr = TextCaches.begin(); itr != TextCaches.end(); itr++){
+				if (!itr->second->UsedBeforeScreenFlip){
+					itr->second->release();
+					TextCaches.erase(itr);
+					auto T = TextCache::createWithSystemFont(String, text->getSystemFontName(), text->getSystemFontSize());
+					T->UsedBeforeScreenFlip = true;
+					TextCaches.insert(std::make_pair(String, T));
+					TargetText = T; 
+					break;
+				}
+			}
+		}
+	}
+	if (TargetText == nullptr)return -1;
+	TargetText->setPosition(DxVec2(x, y));
+	TargetText->setColor(FromUnsignedIntColor(Color));
+	TargetText->visit(_director->getRenderer(), this->getNodeToWorldTransform(), true);
+	*/
+	/*
 	text->setPosition(DxVec2(x,y));
-	text->setAnchorPoint(Vec2(0,1));
 	text->setColor(FromUnsignedIntColor(Color));
-	text->setSystemFontSize(FontSize);
-	this->addChild(text);
+	text->setString(String);
+	text->visit(_director->getRenderer(), this->getNodeToWorldTransform(), true);
+	*/
+	
+	if (txtsppindex >= (int)textSpritePool.size()){
+		SpritePOOL spr;
+		textSpritePool.push_back(spr);
+	}
+	
+	
+	auto& textSprite = textSpritePool[txtsppindex];
+	bool NeedUpdate = true;
+	
+	//HashMapSearch
+	int count = textTextureCache.count(String);
+	auto itr = textTextureCache.find(String);
+	for (int i = 0; i < count; i++){//SearchCache
+		if (itr->second->isSame(text->getSystemFontSize(), text->getSystemFontName())){
+			textSprite.initWithTexture(itr->second);
+			NeedUpdate = false;
+			itr->second->UsedBeforeScreenFlip = true;
+			break;
+		}
+		itr++;
+	}
+	if (NeedUpdate){//MakeCache
+		if (textTextureCache.size() < TextTexture2DCache::textTextureCacheSize-1){
+			auto& T = textTextureCacheVec[textTextureCache.size()];
+			T.initWithString(String, text->getFontDefinition());
+			textSprite.initWithTexture(&T);
+			T.UsedBeforeScreenFlip = true;
+			textTextureCache.insert(std::make_pair(String, &T));
+		}else {//UpdateCache
+			for (auto itr = textTextureCache.begin(); itr != textTextureCache.end();itr++){
+				if (!itr->second->UsedBeforeScreenFlip){
+					itr->second->initWithString(String, text->getFontDefinition());
+					itr->second->UsedBeforeScreenFlip = true;
+					textSprite.initWithTexture(itr->second);
+					textTextureCache.insert(std::make_pair(String ,itr->second));
+					textTextureCache.erase(itr);
+					break;
+				}
+			}
+		}
+	}
+	
+	
+	textSprite.setPosition(DxVec2(x, y));
+	textSprite.setCameraMask(text->getCameraMask());
+	textSprite.setGlobalZOrder(text->getGlobalZOrder());
+	textSprite.setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
+	textSprite.setBlendFunc(BlendFunc::ALPHA_NON_PREMULTIPLIED );
+	textSprite.updateDisplayedColor(FromUnsignedIntColor(Color));
+	//textSprite.setColor(FromUnsignedIntColor(Color));
+	textSprite.updateDisplayedOpacity(255);
+	textSprite.draw( _director->getRenderer(), textSprite.getNodeToWorldTransform(), true);
+	txtsppindex++;
+	
 	return 0;
 }
 
@@ -260,7 +405,7 @@ int DrawFormatString(int x, int y, unsigned int Color, char *FormatString, ...){
 	va_list ap;
 	va_start(ap, FormatString);
 	char* buf = (char*)malloc(102400);
-	if (buf == nullptrptr){va_end(ap);return -1;}
+	if (buf == nullptr){va_end(ap);return -1;}
 	vsnprintf(buf, 102400, FormatString, ap);
 	va_end(ap);
 	int res = DrawString(x, y, buf, Color);
@@ -269,11 +414,14 @@ int DrawFormatString(int x, int y, unsigned int Color, char *FormatString, ...){
 }
 
 int CCDxLib::SetFontSize(int FontSize){
-	this->FontSize = FontSize; return 0;
+	text->setSystemFontSize(FontSize);
+	return 0;
 }
-int CCDxLib::ChangeFont(char *FontName){
-	this->FontName = FontName; return 0;
-}
+
+/*int CCDxLib::ChangeFont(char *FontName){
+	text->setSystemFontName(FontName);
+	return 0;
+}*/
 
 int CCDxLib::SetCreateSoundDataType(int SoundDataType){
 	switch (SoundDataType){
@@ -319,6 +467,7 @@ int CCDxLib::PlaySoundMem(int SoundHandle, int PlayType, int TopPositionFlag){
 	return 0;
 }
 int CCDxLib::CheckSoundMem(int SoundHandle){
+	
 	if (CheckMusicHandle(SoundHandle)){
 		if (MusicHandles[SoundHandle].isBGM){
 			if (CurrentPlayedBGMName != MusicHandles[SoundHandle].FileName)return 0;
@@ -478,7 +627,6 @@ int CCDxLib::KeyMap(cocos2d::EventKeyboard::KeyCode KeyCode){
 	}
 	return 0;
 }
-
 int CCDxLib::KeyReverseMap(int Key){
 	switch (Key){
 	case 0:return KEY_INPUT_BACK;
@@ -584,6 +732,100 @@ int CCDxLib::KeyReverseMap(int Key){
 	}
 	return 0;
 }
+std::string CCDxLib::KeyName(cocos2d::EventKeyboard::KeyCode KeyCode){
+	switch ((int)KeyCode){
+	case KEY_INPUT_BACK		  :return "BACK";
+	case KEY_INPUT_TAB		  :return "TAB";
+	case KEY_INPUT_RETURN	  :return "ENTER";
+	case KEY_INPUT_LSHIFT	  :return "SHIFT";
+	case KEY_INPUT_RSHIFT	  :return "RSHIFT";
+	case KEY_INPUT_LCONTROL	  :return "CTRL";
+	case KEY_INPUT_RCONTROL	  :return "RCTRL";
+	case KEY_INPUT_ESCAPE	  :return "ESC";
+	case KEY_INPUT_SPACE	  :return "SPACE";
+	case KEY_INPUT_PGUP		  :return "PGUP";
+	case KEY_INPUT_PGDN		  :return "PGDN";
+	case KEY_INPUT_END		  :return "END";
+	case KEY_INPUT_HOME		  :return "HOME";
+	case KEY_INPUT_LEFT		  :return "←";
+	case KEY_INPUT_UP		  :return "↑";
+	case KEY_INPUT_RIGHT	  :return "→";
+	case KEY_INPUT_DOWN		  :return "↓";
+	case KEY_INPUT_INSERT	  :return "INSERT";
+	case KEY_INPUT_DELETE	  :return "DEL";
+	case KEY_INPUT_MINUS	  :return "-";
+	case KEY_INPUT_YEN		  :return "￥";
+	case KEY_INPUT_PREVTRACK  :return "^";
+	case KEY_INPUT_PERIOD	  :return ".";
+	case KEY_INPUT_SLASH	  :return "/";
+	case KEY_INPUT_LALT		  :return "ALT";
+	case KEY_INPUT_RALT		  :return "ALT";
+	case KEY_INPUT_SCROLL	  :return "SCROLL";
+	case KEY_INPUT_SEMICOLON  :return ";";
+	case KEY_INPUT_COLON	  :return ":";
+	case KEY_INPUT_LBRACKET	  :return "[";
+	case KEY_INPUT_RBRACKET	  :return "]";
+	case KEY_INPUT_AT		  :return "@";
+	case KEY_INPUT_BACKSLASH  :return "\\";
+	case KEY_INPUT_COMMA	  :return ".";
+	case KEY_INPUT_CAPSLOCK	  :return "CAPS";
+	case KEY_INPUT_PAUSE	  :return "PAUSE";
+	case KEY_INPUT_MULTIPLY	  :return "×";
+	case KEY_INPUT_ADD		  :return "+";
+	case KEY_INPUT_SUBTRACT	  :return "-";
+	case KEY_INPUT_DIVIDE	  :return "÷";
+	case KEY_INPUT_NUMPADENTER:return "ENTER";
+	case KEY_INPUT_F1		  :return "F1";
+	case KEY_INPUT_F2		  :return "F2";
+	case KEY_INPUT_F3		  :return "F3";
+	case KEY_INPUT_F4		  :return "F4";
+	case KEY_INPUT_F5		  :return "F5";
+	case KEY_INPUT_F6		  :return "F6";
+	case KEY_INPUT_F7		  :return "F7";
+	case KEY_INPUT_F8		  :return "F8";
+	case KEY_INPUT_F9		  :return "F9";
+	case KEY_INPUT_F10		  :return "F10";
+	case KEY_INPUT_F11		  :return "F11";
+	case KEY_INPUT_F12		  :return "F12";
+	case KEY_INPUT_A		  :return "A";
+	case KEY_INPUT_B		  :return "B";
+	case KEY_INPUT_C		  :return "C";
+	case KEY_INPUT_D		  :return "D";
+	case KEY_INPUT_E		  :return "E";
+	case KEY_INPUT_F		  :return "F";
+	case KEY_INPUT_G		  :return "G";
+	case KEY_INPUT_H		  :return "H";
+	case KEY_INPUT_I		  :return "I";
+	case KEY_INPUT_J		  :return "J";
+	case KEY_INPUT_K		  :return "K";
+	case KEY_INPUT_L		  :return "L";
+	case KEY_INPUT_M		  :return "M";
+	case KEY_INPUT_N		  :return "N";
+	case KEY_INPUT_O		  :return "O";
+	case KEY_INPUT_P		  :return "P";
+	case KEY_INPUT_Q		  :return "Q";
+	case KEY_INPUT_R		  :return "R";
+	case KEY_INPUT_S		  :return "S";
+	case KEY_INPUT_T		  :return "T";
+	case KEY_INPUT_U		  :return "U";
+	case KEY_INPUT_V		  :return "V";
+	case KEY_INPUT_W		  :return "W";
+	case KEY_INPUT_X		  :return "X";
+	case KEY_INPUT_Y		  :return "Y";
+	case KEY_INPUT_Z		  :return "Z";
+	case KEY_INPUT_0		  :return "0";
+	case KEY_INPUT_1		  :return "1";
+	case KEY_INPUT_2		  :return "2";
+	case KEY_INPUT_3		  :return "3";
+	case KEY_INPUT_4		  :return "4";
+	case KEY_INPUT_5		  :return "5";
+	case KEY_INPUT_6		  :return "6";
+	case KEY_INPUT_7		  :return "7";
+	case KEY_INPUT_8		  :return "8";
+	case KEY_INPUT_9          :return "9";
+	}
+	return "";
+}
 
 void CCDxLib::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event){
 	KeyPushed[KeyMap(keyCode)] = true;
@@ -625,22 +867,32 @@ void CCDxLib::onMouseScroll(Event* evt){
 	EventMouse* e = (EventMouse*)evt;
 	ScrollVal += e->getScrollY();
 }
-
-
 int CCDxLib::SetMouseDispFlag(int DispFlag){
 	auto glview = Director::getInstance()->getOpenGLView();
 	glview->setCursorVisible(DispFlag == TRUE);
 	return 0;
 }
 int CCDxLib::GetMousePoint(int *XBuf, int *YBuf){ 
-	*XBuf = MouseX;
-	*YBuf = MouseY;
-	return 0;
+	if (EmulateTouchByMouseFunctions){
+		if (GetTouchInputNum() > 0){
+			GetTouchInput(0,XBuf,YBuf,NULL,NULL);
+		}else{
+			*XBuf = LastTouchX;
+			*YBuf = DxY(LastTouchY);
+		}
+		return 0;
+	}else{
+		*XBuf = MouseX;
+		*YBuf = MouseY;
+		return 0;
+	}
 }
-
 int CCDxLib::GetMouseInput(){ 
-	
-	return 
+	if (EmulateTouchByMouseFunctions){
+		if (GetTouchInputNum() > 0) 
+			return MOUSE_INPUT_LEFT;
+		else return 0;
+	}else return 
 		MousePushed[0] * MOUSE_INPUT_LEFT   |
 		MousePushed[1] * MOUSE_INPUT_RIGHT  |
 		MousePushed[2] * MOUSE_INPUT_MIDDLE |
@@ -657,4 +909,131 @@ int CCDxLib::GetMouseWheelRotVol(){
 	return res;
 }
 
-//drawNode->Clearの方がいいかもしれない
+void CCDxLib::onTouchesBegan    (const std::vector<Touch*>& touches, Event *pEvent){
+	for (auto t : touches){
+		DxTouches.push_back(DxTouch(
+			t->getLocation().x,
+			t->getLocation().y,
+			t->getID()));
+		LastTouchX = t->getLocation().x;
+		LastTouchY = t->getLocation().y;
+	}
+}
+void CCDxLib::onTouchesMoved    (const std::vector<Touch*>& touches, Event *pEvent){
+	int i = 0;
+	for (auto t : touches){
+		for (auto idxt = DxTouches.begin(); idxt != DxTouches.end();){
+			if ((*idxt).ID == t->getID()) {
+				(*idxt).X = t->getLocation().x;
+				(*idxt).Y = t->getLocation().y;
+				break;
+			}
+			idxt++;
+		}
+		LastTouchX = t->getLocation().x;
+		LastTouchY = t->getLocation().y;
+	}
+}
+void CCDxLib::onTouchesEnded    (const std::vector<Touch*>& touches, Event *pEvent){
+	for (auto t : touches){
+		for (auto idxt = DxTouches.begin();idxt !=DxTouches.end();){
+			if ((*idxt).ID == t->getID()) {
+				idxt = DxTouches.erase(idxt);
+				break;
+			}
+			idxt++;
+		}
+		LastTouchX = t->getLocation().x;
+		LastTouchY = t->getLocation().y;
+	}
+}
+void CCDxLib::onTouchesCancelled(const std::vector<Touch*>& touches, Event *pEvent){
+	this->onTouchesEnded(touches, pEvent);
+}
+int CCDxLib::GetTouchInputNum(){
+	return DxTouches.size();
+}
+int CCDxLib::GetTouchInput(int InputNo, int *PositionX, int *PositionY, int *ID, int *Device){
+	if (InputNo < 0 || (unsigned int)InputNo >= DxTouches.size())return -1;
+	int i = 0;
+	for (auto idxt = DxTouches.begin(); idxt != DxTouches.end();){
+		if (i == InputNo){
+			if (PositionX != nullptr)*PositionX = idxt->X;
+			if (PositionY != nullptr)*PositionY = DxY(idxt->Y);
+			if (ID != nullptr)*ID = idxt->ID;
+			return 0;
+		}
+		idxt++; i++;
+	}
+	
+	return -1;
+}
+
+void CCDxLib::EMULATE_TOUCH_BY_MOUSEFUNCTIONS(bool Emulate){
+	EmulateTouchByMouseFunctions = Emulate;
+}
+void CCDxLib::EmulateButtonEnterCallback(int KeyCode){
+	onKeyPressed((EventKeyboard::KeyCode) KeyCode, nullptr);
+}
+void CCDxLib::EmulateButtonExitCallback(int KeyCode){
+	onKeyReleased((EventKeyboard::KeyCode) KeyCode, nullptr);
+}
+
+void CCDxLib::EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode){
+	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KeyCode, "ButtonExample.png", USE_EMULATE_BUTTON_DEFAULT_POSITION, USE_EMULATE_BUTTON_DEFAULT_POSITION,true);
+}
+void CCDxLib::EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode, char* ButtonFileName, int PositionX, int PositionY, bool WriteKeyName){
+	
+	auto button = ui::Button::create(ButtonFileName, "");
+	button->addTouchEventListener([KeyCode,button](Ref* pSender, cocos2d::ui::Widget::TouchEventType type){
+		switch (type){
+		case ui::Widget::TouchEventType::BEGAN:
+			Get_m_dxlib()->EmulateButtonEnterCallback(KeyCode);
+			button->setOpacity(255);
+			break;
+		case ui::Widget::TouchEventType::ENDED:
+		case ui::Widget::TouchEventType::CANCELED:
+			Get_m_dxlib()->EmulateButtonExitCallback(KeyCode);
+			button->setOpacity(100);
+			break;		
+		}
+	});
+	if (WriteKeyName){
+		button->setTitleText(KeyName((EventKeyboard::KeyCode)KeyCode));
+		button->setTitleColor(FromUnsignedIntColor(0));
+		button->setTitleFontSize(visibleSize.height /18.0);
+	}
+
+	button->setOpacity(100);
+	if (PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION || PositionY == USE_EMULATE_BUTTON_DEFAULT_POSITION){
+		switch (KeyCode){
+		case KEY_INPUT_LEFT	:
+			PositionX = visibleSize.width - button->getSize().width * 1.1 *3;
+			PositionY = visibleSize.height - button->getSize().height;
+			break;
+		case KEY_INPUT_RIGHT:
+			PositionX = visibleSize.width - button->getSize().width * 1.1 * 1;
+			PositionY = visibleSize.height - button->getSize().height;
+			break;
+		case KEY_INPUT_UP:
+			PositionX = visibleSize.width - button->getSize().width * 1.1 * 2;
+			PositionY = visibleSize.height - button->getSize().height *1.1 *  2;
+			break;
+		case KEY_INPUT_DOWN:
+			PositionX = visibleSize.width - button->getSize().width * 1.1 * 2;
+			PositionY = visibleSize.height - button->getSize().height;
+			break;
+		default:
+			PositionX = button->getSize().width * 1.1 *(0.7 + EmulateButtonNum);
+			PositionY = visibleSize.height - button->getSize().height;
+			EmulateButtonNum++;
+			break;
+
+		}
+	}
+	button->setPosition(DxVec2(PositionX, PositionY));
+	this->addChild(button);
+	
+
+}
+
