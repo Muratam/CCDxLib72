@@ -16,11 +16,11 @@ void CCDxLoop(float deltaTime);
 
 #define DX_PLAYTYPE_LOOP (3)
 #define DX_PLAYTYPE_BACK (1)
-//本当は(0)だが、コールバックを受け取るのも大変なので同値に
+//The true value is (0)
 #define DX_PLAYTYPE_NORMAL DX_PLAYTYPE_BACK
 const int DX_SOUNDDATATYPE_MEMNOPRESS = 0;//SE
 #define DX_SOUNDDATATYPE_MEMPRESS 2  
-//(本当は(3)だが、Cocosの都合上SimpleAudioEngineを使うので、同値に)
+//The true value is (3)
 #define DX_SOUNDDATATYPE_FILE DX_SOUNDDATATYPE_MEMPRESS
 #ifndef TRUE
 #define TRUE (1)
@@ -78,6 +78,7 @@ public:
 	void onTouchesMoved    (const std::vector<Touch*>& touches, Event *pEvent);
 	void onTouchesEnded    (const std::vector<Touch*>& touches, Event *pEvent);
 	void onTouchesCancelled(const std::vector<Touch*>& touches, Event *pEvent);
+	void onAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event);
 	void EmulateButtonEnterCallback(int KeyCode);
 	void EmulateButtonExitCallback(int KeyCode);
 	CREATE_FUNC(CCDxLib);
@@ -110,7 +111,7 @@ private:
 	public://For DISARROW 
 		SpritePOOL() :Sprite(){};
 		SpritePOOL(const SpritePOOL &){};
-		SpritePOOL &operator =(const SpritePOOL &){};
+		SpritePOOL &operator =(const SpritePOOL &){return *this;};
 	};
 	std::vector<SpritePOOL> SpritePool;
 	int sppindex = 0;
@@ -185,6 +186,13 @@ private:
 	int KeyReverseMap(int Key);
 	std::string KeyName(cocos2d::EventKeyboard::KeyCode KeyCode);
 	std::vector<std::string> GraphicHandles;
+	class ImagePOOL : public Image {
+	public://For DISARROW 
+		ImagePOOL() :Image(){};
+		ImagePOOL(const ImagePOOL &){};
+		ImagePOOL &operator =(const ImagePOOL &){ return *this; };
+	};
+	std::vector<ImagePOOL> SoftImageHandles;
 	std::vector <MusicHandle> MusicHandles;
 	std::string CurrentPlayedBGMName;
 	std::list <DxTouch> DxTouches;
@@ -205,9 +213,9 @@ private:
 	int LastTouchX = 0, LastTouchY = 0;
 	float ScrollVal = 0;
 	float CurrentScrollVal = 0;
-	//Acceleration al;
 	bool EmulateTouchByMouseFunctions = false;
 	int EmulateButtonNum = 0;
+	bool EmulateKeyBordArrowsByAccelerometer = false;
 	bool EmulateKeyBoardBySingleTouch = false;
 	int EmulateKeyBoardBySingleTouchKeyCode = 0;
 #define USE_EMULATE_BUTTON_DEFAULT_POSITION -7272
@@ -274,7 +282,21 @@ public:
 	void EMULATE_TOUCH_BY_MOUSEFUNCTIONS(bool Emulate = true);
 	void EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode, char* ButtonFileName, int PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION, int PositionY = USE_EMULATE_BUTTON_DEFAULT_POSITION,bool WriteKeyName = false);
 	void EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode);
+	void EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate = true);
 
+	int LoadSoftImage(char *FileName);
+	int GetSoftImageSize(int SIHandle, int *Width, int *Height);
+	int GetPixelSoftImage(int SIHandle, int x, int y, int *r, int *g, int *b, int *a);
+	int DrawSoftImage(int x, int y, int SIHandle);
+	int DrawPixelSoftImage(int SIHandle, int x, int y, int r, int g, int b, int a);
+	int MakeARGB8ColorSoftImage(int SizeX, int SizeY);
+	int MakeXRGB8ColorSoftImage(int SizeX, int SizeY);
+	int FillSoftImage(int SIHandle, int r, int g, int b, int a);
+	int DeleteSoftImage(int SIHandle);
+	int InitSoftImage();
+
+	//int BltSoftImage(int SrcX, int SrcY, int SrcSizeX, int SrcSizeY, int SrcSIHandle, int DestX, int DestY, int DestSIHandle);
+	//int CreateGraphFromSoftImage(int SIHandle);
 	//int GetMouseInputLog(int *Button, int *ClickX, int *ClickY, int LogDelete);
 	//int LoadDivGraph(char *FileName, int AllNum,int XNum, int YNum,int XSize, int YSize, int *HandleBuf);
 };
@@ -321,6 +343,19 @@ MKCCDxFN(int, GetMouseWheelRotVol, (), ())
 MKCCDxFN(int, GetTouchInputNum, (), ())
 MKCCDxFN(int, GetTouchInput, (int InputNo, int *PositionX, int *PositionY, int *ID, int *Device), (InputNo, PositionX,PositionY,ID,Device))
 MKCCDxFN(void, EMULATE_TOUCH_BY_MOUSEFUNCTIONS,(bool Emulate = true),(Emulate))
+MKCCDxFN(void, EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON, (int KeyCode, char* ButtonFileName, int PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION, int PositionY = USE_EMULATE_BUTTON_DEFAULT_POSITION, bool WriteKeyName = false), (KeyCode, ButtonFileName,  PositionX , PositionY,WriteKeyName))
+MKCCDxFN(void, EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON,(int KeyCode),(KeyCode))
+MKCCDxFN(int, LoadSoftImage, (char *FileName), (FileName))
+MKCCDxFN(int, GetSoftImageSize, (int SIHandle, int *Width, int *Height), (SIHandle, Width, Height))
+MKCCDxFN(int, GetPixelSoftImage, (int SIHandle, int x, int y, int *r, int *g, int *b, int *a), (SIHandle, x, y, r, g, b, a))
+MKCCDxFN(int, DrawSoftImage, (int x, int y, int SIHandle), (x,y,SIHandle))
+MKCCDxFN(int, DrawPixelSoftImage, (int SIHandle, int x, int y, int r, int g, int b, int a), (SIHandle,x,y,r,g,b,a))
+MKCCDxFN(int, MakeARGB8ColorSoftImage, (int SizeX, int SizeY), (SizeX,SizeY))
+MKCCDxFN(int, MakeXRGB8ColorSoftImage, (int SizeX, int SizeY), (SizeX,SizeY))
+MKCCDxFN(int, FillSoftImage, (int SIHandle, int r, int g, int b, int a),(SIHandle,r,g,b,a))
+MKCCDxFN(int, DeleteSoftImage, (int SIHandle), (SIHandle))
+MKCCDxFN(int, InitSoftImage, (), ())
+
 
 int DxLib_End();
 

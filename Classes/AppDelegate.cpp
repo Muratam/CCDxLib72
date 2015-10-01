@@ -1,4 +1,4 @@
-#include "AppDelegate.h"
+ï»¿#include "AppDelegate.h"
 #include "DxLib.h"
 
 USING_NS_CC;
@@ -41,16 +41,16 @@ bool AppDelegate::applicationDidFinishLaunching() {
     director->setDisplayStats(true);
     // set FPS. the default value is 1.0/60 if you don't call this
     director->setAnimationInterval((float)(1.0 / 60));
-	glview->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height, ResolutionPolicy::NO_BORDER);
+	glview->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height, ResolutionPolicy::EXACT_FIT);// ResolutionPolicy::NO_BORDER);
     Size frameSize = glview->getFrameSize();
-    
+	/*
 	if (frameSize.height > mediumResolutionSize.height)     
         director->setContentScaleFactor(MIN(largeResolutionSize.height/designResolutionSize.height, largeResolutionSize.width/designResolutionSize.width));
     else if (frameSize.height > smallResolutionSize.height)
         director->setContentScaleFactor(MIN(mediumResolutionSize.height/designResolutionSize.height, mediumResolutionSize.width/designResolutionSize.width));
     else
 		director->setContentScaleFactor(MIN(smallResolutionSize.height/designResolutionSize.height, smallResolutionSize.width/designResolutionSize.width));
-    
+    */
 	register_all_packages();
 
     // create a scene. it's an autorelease object
@@ -59,6 +59,8 @@ bool AppDelegate::applicationDidFinishLaunching() {
 	director->runWithScene(scene);
 	if (SetBackGroundColorR != -72 && SetBackGroundColorG != -72 && SetBackGroundColorB != -72)Get_m_dxlib()->SetBackgroundColor(SetBackGroundColorR, SetBackGroundColorG, SetBackGroundColorB);
 	Get_m_dxlib()->EMULATE_TOUCH_BY_MOUSEFUNCTIONS(BeforeDxInitEmulateTouchByMouseFunctions);
+	Get_m_dxlib()->EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(BeforeDxInitEmulateKeuBoardByAccelerometer );
+
 	return true;
 }
 
@@ -81,7 +83,7 @@ void AppDelegate::applicationWillEnterForeground() {
 
 
 
-//ŠO•”ŒöŠJ—p‚Ì‰Šúİ’è‚ÌDxlib‚ÌŠÖ”‚Í‚±‚±‚Å’è‹`‚·‚éB
+//å¤–éƒ¨å…¬é–‹ç”¨ã®åˆæœŸè¨­å®šã®Dxlibã®é–¢æ•°ã¯ã“ã“ã§å®šç¾©ã™ã‚‹ã€‚
 
 int AppDelegate::SetGraphMode(int SizeX, int SizeY, int Dummy){
 	designResolutionSize = cocos2d::Size(SizeX,SizeY);
@@ -99,6 +101,10 @@ int AppDelegate::SetMainWindowText(char *WindowText){
 void AppDelegate::EMULATE_TOUCH_BY_MOUSEFUNCTIONS(bool Emulate){
 	BeforeDxInitEmulateTouchByMouseFunctions = Emulate;
 }
+void AppDelegate::EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate){
+	BeforeDxInitEmulateKeuBoardByAccelerometer = Emulate;
+}
+
 int AppDelegate::SetBackgroundColor(int Red, int Green, int Blue){
 	SetBackGroundColorR = Red;
 	SetBackGroundColorG = Green;

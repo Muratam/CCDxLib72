@@ -2,7 +2,10 @@
 #include <stdarg.h>
 #include <algorithm>
 #include <iostream>
-#pragma execution_character_set("utf-8")
+
+
+
+//#pragma execution_character_set("utf-8")
 
 //日本語が文字化けする場合はこれを定義して、UTF-8にしてください。
 //#pragma execution_character_set("utf-8")
@@ -58,6 +61,10 @@ bool CCDxLib::init(){
 	touchlistener->onTouchesEnded = CC_CALLBACK_2(CCDxLib::onTouchesEnded, this);
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(touchlistener, this);
 
+	Device::setAccelerometerEnabled(true);
+	auto acclistener = EventListenerAcceleration::create(CC_CALLBACK_2(CCDxLib::onAcceleration, this));
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(acclistener, this);
+
 
 	InitMembers();
 
@@ -97,6 +104,25 @@ void CCDxLib::update(float delta){
 	CCDxLoop(delta);
 }
 
+void CCDxLib::EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate){
+	EmulateKeyBordArrowsByAccelerometer = Emulate;/*
+	if (Emulate){
+		_accelerometerEnabled = true;
+		if (!EmulateKeyBordArrowsByAccelerometer){
+
+			Device::setAccelerometerEnabled(true);
+			auto acclistener = EventListenerAcceleration::create(CC_CALLBACK_2(CCDxLib::onAcceleration, this));
+			Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(acclistener, this);
+			EmulateKeyBordArrowsByAccelerometer = true;
+		}
+	}else {
+		_accelerometerEnabled = false;
+		Device::setAccelerometerEnabled(false);
+		this->setAccelerometerEnabled(false);
+	}
+	*/
+}
+
 
 /////////////////////////////////////////////////
 //////////////////CCDxLib////////////////////////
@@ -122,12 +148,8 @@ int CCDxLib::LoadGraphScreen(int x, int y, char *GraphName, int TransFlag){
 
 int CCDxLib::LoadGraph(char *FileName){	
 
-	//SpriteHandles.push_back( Sprite::create(FileName));
-	//SpriteHandles[SpriteHandles.size() - 1]->retain();
-	//return SpriteHandles.size() - 1;
-
-	
 	textureCache->addImage(FileName);
+	//textureCache->addImageAsync(FileName,);
 	auto texture = textureCache->getTextureForKey(FileName);
 	if (texture == nullptr) return -1;
 	GraphicHandles.push_back(FileName);
@@ -136,10 +158,8 @@ int CCDxLib::LoadGraph(char *FileName){
 }
 
 Sprite* CCDxLib::CheckGetSprite(int GrHandle){
-	//if (GrHandle < 0 || (unsigned int)GrHandle > SpriteHandles.size()) return nullptr;
-	//else return SpriteHandles[GrHandle];
-
-	if (GrHandle < 0 || (unsigned int)GrHandle > GraphicHandles.size()) return nullptr;
+	
+	if (GrHandle < 0 || (unsigned int)GrHandle >= GraphicHandles.size()) return nullptr;
 	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
 	
 	if (sppindex >= (int)SpritePool.size()){
@@ -151,12 +171,6 @@ Sprite* CCDxLib::CheckGetSprite(int GrHandle){
 	if (texture == nullptr) return nullptr;
 	else return &SpritePool[sppindex-1];
 	
-	/*
-	if (GrHandle < 0 || (unsigned int)GrHandle > GraphicHandles.size()) return nullptr;
-	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
-	if (texture == nullptr) return nullptr;
-	else return Sprite::createWithTexture(texture);
-	*/
 }
 
 int CCDxLib::ScreenFlip(){
@@ -448,7 +462,7 @@ int CCDxLib::LoadSoundMem(char *FileName){
 	return -1;
 }
 bool CCDxLib::CheckMusicHandle(int index){
-	return  !(index < 0 || (unsigned int)index > MusicHandles.size());
+	return  !(index < 0 || (unsigned int)index >= MusicHandles.size());
 }
 int CCDxLib::PlaySoundMem(int SoundHandle, int PlayType, int TopPositionFlag){
 	if (CheckMusicHandle(SoundHandle)){
@@ -747,10 +761,10 @@ std::string CCDxLib::KeyName(cocos2d::EventKeyboard::KeyCode KeyCode){
 	case KEY_INPUT_PGDN		  :return "PGDN";
 	case KEY_INPUT_END		  :return "END";
 	case KEY_INPUT_HOME		  :return "HOME";
-	case KEY_INPUT_LEFT		  :return "←";
-	case KEY_INPUT_UP		  :return "↑";
-	case KEY_INPUT_RIGHT	  :return "→";
-	case KEY_INPUT_DOWN		  :return "↓";
+	case KEY_INPUT_LEFT		  :return "<";
+	case KEY_INPUT_UP		  :return " ";
+	case KEY_INPUT_RIGHT	  :return ">";
+	case KEY_INPUT_DOWN		  :return " ";
 	case KEY_INPUT_INSERT	  :return "INSERT";
 	case KEY_INPUT_DELETE	  :return "DEL";
 	case KEY_INPUT_MINUS	  :return "-";
@@ -950,6 +964,40 @@ void CCDxLib::onTouchesEnded    (const std::vector<Touch*>& touches, Event *pEve
 void CCDxLib::onTouchesCancelled(const std::vector<Touch*>& touches, Event *pEvent){
 	this->onTouchesEnded(touches, pEvent);
 }
+void CCDxLib::onAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event){
+	const int thresholdX = 0.3f;
+	const int thresholdZ = 0.3f;
+	if (EmulateKeyBordArrowsByAccelerometer){
+		auto z = acc->z + 0.3f;
+		if (acc->x < -thresholdX){
+			onKeyPressed((EventKeyboard::KeyCode) KEY_INPUT_LEFT, nullptr);
+			onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_RIGHT, nullptr);
+		}
+		else if (acc->x > thresholdX){
+			onKeyPressed((EventKeyboard::KeyCode) KEY_INPUT_RIGHT, nullptr);
+			onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_LEFT, nullptr);
+		}
+		else {
+			onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_RIGHT, nullptr);
+			onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_LEFT, nullptr);
+		}
+		if (z < -thresholdZ){
+			onKeyPressed((EventKeyboard::KeyCode) KEY_INPUT_UP, nullptr);
+			onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_DOWN, nullptr);
+		}
+		else if (z > thresholdZ){
+			onKeyPressed((EventKeyboard::KeyCode) KEY_INPUT_DOWN, nullptr);
+			onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_UP, nullptr);
+		}
+		else {
+			onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_DOWN, nullptr);
+			onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_UP, nullptr);
+		}
+	}
+}
+
+
+
 int CCDxLib::GetTouchInputNum(){
 	return DxTouches.size();
 }
@@ -1037,3 +1085,193 @@ void CCDxLib::EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode, char* ButtonFile
 
 }
 
+int CCDxLib::LoadSoftImage(char *FileName){
+	ImagePOOL image;
+	SoftImageHandles.push_back(image);
+	SoftImageHandles[SoftImageHandles.size() - 1].initWithImageFile(FileName);
+	return SoftImageHandles.size() - 1;
+}
+
+int CCDxLib::GetSoftImageSize(int SIHandle, int *Width, int *Height){
+	if (SIHandle < 0 || (unsigned int)SIHandle > SoftImageHandles.size()) return -1;
+	auto& image = SoftImageHandles[SIHandle];
+	*Width = image.getWidth();
+	*Height = image.getHeight();
+	return 0;
+}
+
+int CCDxLib::DrawPixelSoftImage(int SIHandle, int x, int y, int r, int g, int b, int a){
+	if (SIHandle < 0 || (unsigned int)SIHandle > SoftImageHandles.size()) return -1;
+	auto& image = SoftImageHandles[SIHandle];
+	auto height = image.getHeight();
+	auto width = image.getWidth();
+	if (x < 0 || x >= width) return -1;
+	if (y < 0 || y >= height) return -1;
+	auto Bad = [](int c) -> bool{return c < 0 || c > 255; };
+	if (Bad(r) || Bad(g) || Bad(b) || Bad(a)) return -1;
+	auto data = image.getData();
+	unsigned char * p = data;
+	unsigned char ucr = r, ucg = g, ucb = b,uca =a;
+	auto bpp = image.getBitPerPixel();
+	p += bpp == 32 ? 4 * (x + width * y) : 3 * (x + width * y);
+	*p = ucr; p++;
+	*p = ucg; p++;
+	*p = ucb; p++;
+	if (bpp == 32){ *p = uca;  p++; }
+	return 0;
+}
+
+int CCDxLib::MakeARGB8ColorSoftImage(int SizeX, int SizeY){
+	ImagePOOL image;
+	SoftImageHandles.push_back(image);
+	int size = SizeX * SizeY * 4;
+	auto buffer = (unsigned char*)malloc(sizeof(unsigned char) * size);
+	SoftImageHandles[SoftImageHandles.size() - 1].initWithRawData(
+		buffer, sizeof(unsigned char) * size, SizeX, SizeY, 32);
+	return SoftImageHandles.size() - 1;
+}
+
+int CCDxLib::MakeXRGB8ColorSoftImage(int SizeX, int SizeY){
+	ImagePOOL image;
+	SoftImageHandles.push_back(image);
+	int size = SizeX * SizeY * 3;
+	auto buffer = (unsigned char*)malloc(sizeof(unsigned char) * size);
+	SoftImageHandles[SoftImageHandles.size() - 1].initWithRawData(
+		buffer, sizeof(unsigned char) * size, SizeX, SizeY, 24);
+	return SoftImageHandles.size() - 1;
+}
+
+int CCDxLib::DrawSoftImage(int x, int y, int SIHandle){
+	if (SIHandle < 0 || (unsigned int)SIHandle >= SoftImageHandles.size()) return -1;
+	auto& image = SoftImageHandles[SIHandle];
+	auto height = image.getHeight();
+	auto width = image.getWidth();
+	auto data = image.getData();
+	auto bpp = image.getBitPerPixel();
+	unsigned char * p = data;
+	unsigned char ucp;
+	int r, g, b, a;
+	for (int h = 0; h < height; h++){
+		for (int w = 0; w < width; w++){
+			ucp = *p; r = (int)ucp;  p++;
+			ucp = *p; g = (int)ucp;  p++;
+			ucp = *p; b = (int)ucp;  p++;
+			if (bpp == 32){ ucp = *p; a = (int)ucp;  p++; }
+			drawNode->drawDot(DxVec2(x + w, y + h), 1,Color4F(r / 255.0, g / 255.0, b / 255.0, a / 255.0));
+		}
+	}
+
+	return 0;
+}
+
+int CCDxLib::GetPixelSoftImage(int SIHandle, int x, int y, int *r, int *g, int *b, int *a){
+	if (SIHandle < 0 || (unsigned int)SIHandle >= SoftImageHandles.size()) return -1;
+	auto& image = SoftImageHandles[SIHandle];
+	auto height = image.getHeight();
+	auto width = image.getWidth();
+	auto data = image.getData();
+	auto bpp = image.getBitPerPixel();
+	unsigned char * p = data;
+	unsigned char ucp;
+	if (x < 0 || x >= width) return -1;
+	if (y < 0 || y >= height) return -1;
+	p += bpp == 32 ? 4 *(x + width * y) : 3 * (x + width * y);
+	ucp = *p; *r = (int)ucp;  p++;
+	ucp = *p; *g = (int)ucp;  p++;
+	ucp = *p; *b = (int)ucp;  p++;
+	if (bpp == 32){ucp = *p; *a = (int)ucp;  p++;}
+	return 0;
+}
+
+int CCDxLib::FillSoftImage(int SIHandle, int r, int g, int b, int a){
+	if (SIHandle < 0 || (unsigned int)SIHandle >= SoftImageHandles.size()) return -1;
+	auto& image = SoftImageHandles[SIHandle];
+	auto height = image.getHeight();
+	auto width = image.getWidth();
+	auto Bad = [](int c) -> bool{return c < 0 || c > 255; };
+	if (Bad(r) || Bad(g) || Bad(b) || Bad(a)) return -1;
+	auto data = image.getData();
+	unsigned char * p = data;
+	unsigned char ucr = r, ucg = g, ucb = b, uca = a;
+	auto bpp = image.getBitPerPixel();
+	for (int h = 0; h < height; h++){
+		for (int w = 0; w < width; w++){
+			*p = ucr; p++;
+			*p = ucg; p++;
+			*p = ucb; p++;
+			if (bpp == 32){ *p = uca;  p++; }
+		}
+	}
+	return 0;
+}
+int CCDxLib::DeleteSoftImage(int SIHandle){
+	if (SIHandle < 0 || (unsigned int)SIHandle >= SoftImageHandles.size()) return -1;
+	SoftImageHandles[SIHandle].~ImagePOOL();
+	return 0;
+}
+int CCDxLib::InitSoftImage(){
+	SoftImageHandles.clear();
+	return 0;
+}
+
+
+
+/*
+int CCDxLib::BltSoftImage(int SrcX, int SrcY, int SrcSizeX, int SrcSizeY, int SrcSIHandle, int DestX, int DestY, int DestSIHandle){
+	if (SrcSIHandle < 0 || (unsigned int)SrcSIHandle > SoftImageHandles.size()) return -1;
+	if (DestSIHandle < 0 || (unsigned int)DestSIHandle > SoftImageHandles.size()) return -1;
+	auto& Srcimage = SoftImageHandles[SrcSIHandle];
+	auto& Destimage = SoftImageHandles[DestSIHandle];
+	auto Srcheight = Srcimage.getHeight();
+	auto Srcwidth = Srcimage.getWidth();
+	if (SrcX < 0)SrcX = 0;
+	if (SrcY < 0)SrcY = 0;
+	if (SrcX + SrcSizeX > Srcwidth)SrcSizeX = Srcwidth - SrcX;
+	if (SrcY + SrcSizeY > Srcheight)SrcSizeY = Srcheight - SrcY;
+	auto Srcdata = Srcimage.getData();
+	unsigned char * Srcp = Srcdata;
+	unsigned char uc ;
+	auto Srcbpp = Srcimage.getBitPerPixel();
+	Srcp += Srcbpp == 32 ? 4 * (SrcX + Srcwidth * SrcY)	: 3 * (SrcX + Srcwidth * SrcY);
+}*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void GetPixelFromImage(std::string FileName, int x, int y, unsigned char *r, unsigned char *g, unsigned char *b, unsigned char *a){
+	//PNGは対応してそうだが、BMPは対応していない可能性が高いので注意！
+	Image image;
+	image.initWithImageFile(FileName);
+	auto height = image.getHeight();
+	auto width = image.getWidth();
+	auto data = image.getData();
+	auto bpp = image.getBitPerPixel();
+	unsigned char * p = data;
+	p += bpp == 32 ? 4 * (x + width * y) : 3 * (x + width * y);
+	*r = *p;  p++;
+	*g = *p;  p++;
+	*b = *p;  p++;
+	if (bpp == 32){ *a = *p;  p++; }
+}

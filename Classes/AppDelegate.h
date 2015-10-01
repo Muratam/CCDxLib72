@@ -42,6 +42,7 @@ private:
 	std::string ViewName = "CCDxLib";
 	virtual void CCDxInit();
 	bool BeforeDxInitEmulateTouchByMouseFunctions = false;
+	
 	bool isWindowed = false;
 	const int DX_CHANGESCREEN_OK = 0;
 	const int DX_CHANGESCREEN_RETURN = 1;
@@ -50,7 +51,9 @@ private:
 	int ChangeWindowMode(int Flag);
 	int SetBackgroundColor(int Red, int Green, int Blue);
 	void EMULATE_TOUCH_BY_MOUSEFUNCTIONS(bool Emulate = true);
+	void EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate = true);
 public:
+	bool BeforeDxInitEmulateKeuBoardByAccelerometer = false;
 	int SetBackGroundColorR = -72, SetBackGroundColorB = -72, SetBackGroundColorG = -72;
 	int SetMainWindowText(char *WindowText);
 };
