@@ -72,6 +72,102 @@ private:
 			X = x; Y = y; ID = id;
 		}
 	};
+	class TextTexture2DCache : public Texture2D{
+	public:
+		TextTexture2DCache() : Texture2D(){};
+		TextTexture2DCache(const TextTexture2DCache &){};// TextTexture2DCache();};
+		static const int textTextureCacheSize = 255;
+		int FontSize = 0;
+		std::string FontName = "";
+		bool UsedBeforeScreenFlip = false;
+		inline bool isSame(//std::string _String,
+			int _FontSize, std::string _FontName){
+			return FontSize == _FontSize && FontName == _FontName;
+		}
+		inline bool isEmpty(){ return FontSize == 0; }
+		bool initWithString(const char *text, const FontDefinition& textDefinition){
+			FontSize = textDefinition._fontSize;
+			FontName = textDefinition._fontName;
+			return Texture2D::initWithString(text, textDefinition);
+		}
+	};
+	class SpritePOOL : public Sprite {
+	public://For DISARROW 
+		SpritePOOL() :Sprite(){};
+		SpritePOOL(const SpritePOOL &){};
+		SpritePOOL &operator =(const SpritePOOL &){ return *this; };
+	};
+	struct DivGraphic{
+		//-2から始まるマイナスのハンドルを使用します。
+		std::string FileName;
+		Rect rect;
+		DivGraphic(std::string FileName, Rect _rect){
+			this->FileName = FileName;
+			rect = Rect(_rect);
+		}
+	};
+	class ImagePOOL : public Image {
+	public://For DISARROW 
+		ImagePOOL() :Image(){};
+		ImagePOOL(const ImagePOOL &){};
+		ImagePOOL &operator =(const ImagePOOL &){ return *this; };
+	};
+	struct AssetFILE72{
+		unsigned char * p;
+		unsigned char * data;
+		unsigned char * startpos;
+		unsigned char * endpos;
+		ssize_t filesize;
+		AssetFILE72(){
+			AssetFILE72(nullptr, 0);
+		}
+		AssetFILE72(unsigned char * _data, ssize_t _filesize){
+			startpos = data = p = _data;
+			filesize = _filesize;
+			endpos = startpos + filesize;
+		}
+		bool isValid(){
+			return data != nullptr
+				&&  startpos <= p && p <= endpos;
+		};
+	};
+	/*
+	class TextCache : public Label{
+	public:
+	TextCache(TextHAlignment hAlignment = TextHAlignment::LEFT,
+	TextVAlignment vAlignment = TextVAlignment::TOP)
+	: Label(hAlignment, vAlignment){};
+	TextCache(const TextCache &){};
+	static const int CacheSize = 255;
+	bool UsedBeforeScreenFlip = false;
+	bool Empty = true;
+	inline bool isSame(	int _FontSize, std::string _FontName){
+	return _systemFontSize == _FontSize && this->getSystemFontName() == _FontName;
+	}
+	static TextCache* createWithSystemFont(const std::string& text, const std::string& font, float fontSize){
+	auto ret = new (std::nothrow) TextCache(TextHAlignment::LEFT, TextVAlignment::TOP);
+	if (ret){
+	ret->setSystemFontName(font);
+	ret->setSystemFontSize(fontSize);
+	ret->setDimensions(Size::ZERO.width, Size::ZERO.height);
+	ret->setString(text);
+	ret->autorelease();
+	ret->retain();
+	return ret;
+	}
+	delete ret;
+	return nullptr;
+	}
+	};
+	std::unordered_multimap <std::string, TextCache *>TextCaches;
+	*/
+	//For Experiment
+	//void VISIT(Sprite* image);
+	//std::vector<TrianglesCommand> TrianglesCommands;
+	//TrianglesCommand _trianglesCommand;
+	//TrianglesCommand trian[1000];
+	//int trianIndex = 0;
+	//Label* label2;
 
 public:
 	//Should fclose or release? ~CCDxLib(){	}
@@ -95,8 +191,9 @@ public:
 
 private:
 	
-	inline float DxY(int y){ return visibleSize.height - y; }
-	inline Vec2 DxVec2(int x,int y){return Vec2(x,DxY(y));}
+	inline float DxY(int y){return visibleSize.height - y - DrawAreaLeftBottom.y;}
+	inline float DxX(int x){ return x - DrawAreaLeftBottom.x; }
+	inline Vec2 DxVec2(int x, int y){ return Vec2(DxX(x), DxY(y)); }
 	inline float FromRadian(float Radian){
 		return Radian * 180.0 / __Pi;
 	}
@@ -115,79 +212,13 @@ private:
 	}
 	inline int GetGraphSizeX(int GrHandle){return Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle])->getContentSize().width; }
 	inline int GetGraphSizeY(int GrHandle){ return Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle])->getContentSize().height; }
-	
-	
-	class SpritePOOL : public Sprite {
-	public://For DISARROW 
-		SpritePOOL() :Sprite(){};
-		SpritePOOL(const SpritePOOL &){};
-		SpritePOOL &operator =(const SpritePOOL &){return *this;};
-	};
+		
 	std::vector<SpritePOOL> SpritePool;
 	int sppindex = 0;
-	
-	
 	std::vector<SpritePOOL> textSpritePool;
 	int txtsppindex = 0;
-	class TextTexture2DCache : public Texture2D{
-	public :
-		TextTexture2DCache() : Texture2D(){};
-		TextTexture2DCache(const TextTexture2DCache &){};// TextTexture2DCache();};
-		static const int textTextureCacheSize = 255;
-		int FontSize = 0;
-		std::string FontName = "";
-		bool UsedBeforeScreenFlip = false;
-		inline bool isSame(//std::string _String,
-			int _FontSize, std::string _FontName){
-			return FontSize == _FontSize && FontName == _FontName;
-		}
-		inline bool isEmpty(){ return FontSize == 0; }
-		bool initWithString(const char *text, const FontDefinition& textDefinition){
-			FontSize = textDefinition._fontSize;
-			FontName = textDefinition._fontName;
-			return Texture2D::initWithString(text, textDefinition);
-		}
-	};
 	TextTexture2DCache textTextureCacheVec[TextTexture2DCache::textTextureCacheSize];
-	std::unordered_multimap <std::string, TextTexture2DCache *> textTextureCache;
-	
-	/*
-	class TextCache : public Label{
-	public:
-		TextCache(TextHAlignment hAlignment = TextHAlignment::LEFT,
-			TextVAlignment vAlignment = TextVAlignment::TOP)
-			: Label(hAlignment, vAlignment){};
-		TextCache(const TextCache &){};
-		static const int CacheSize = 255;
-		bool UsedBeforeScreenFlip = false;
-		bool Empty = true;
-		inline bool isSame(	int _FontSize, std::string _FontName){
-			return _systemFontSize == _FontSize && this->getSystemFontName() == _FontName;
-		}
-		static TextCache* createWithSystemFont(const std::string& text, const std::string& font, float fontSize){
-			auto ret = new (std::nothrow) TextCache(TextHAlignment::LEFT, TextVAlignment::TOP);
-			if (ret){
-				ret->setSystemFontName(font);
-				ret->setSystemFontSize(fontSize);
-				ret->setDimensions(Size::ZERO.width, Size::ZERO.height);
-				ret->setString(text);
-				ret->autorelease();
-				ret->retain();
-				return ret;
-			}
-			delete ret;
-			return nullptr;
-		}
-	};
-	std::unordered_multimap <std::string, TextCache *>TextCaches;
-	*/
-	//For Experiment
-	//void VISIT(Sprite* image);
-	//std::vector<TrianglesCommand> TrianglesCommands;
-	//TrianglesCommand _trianglesCommand;
-	//TrianglesCommand trian[1000];
-	//int trianIndex = 0;
-	//Label* label2;
+	std::unordered_multimap <std::string, TextTexture2DCache *> textTextureCache;	
 
 	void InitMembers();
 	Sprite* CheckGetSprite(int GrHandle);
@@ -196,38 +227,16 @@ private:
 	int KeyReverseMap(int Key);
 	std::string KeyName(cocos2d::EventKeyboard::KeyCode KeyCode);
 	std::vector<std::string> GraphicHandles;
-	class ImagePOOL : public Image {
-	public://For DISARROW 
-		ImagePOOL() :Image(){};
-		ImagePOOL(const ImagePOOL &){};
-		ImagePOOL &operator =(const ImagePOOL &){ return *this; };
-	};
+	std::vector<DivGraphic> DivGrapichHandles;
 	std::vector<ImagePOOL> SoftImageHandles;
 	std::vector <MusicHandle> MusicHandles;
 	std::string CurrentPlayedBGMName;
 	std::list <DxTouch> DxTouches;
-	struct AssetFILE72{
-		unsigned char * p ;
-		unsigned char * data ;
-		unsigned char * startpos ;
-		unsigned char * endpos ;
-		ssize_t filesize;
-		AssetFILE72(){
-			AssetFILE72(nullptr,0);
-		}
-		AssetFILE72(unsigned char * _data, ssize_t _filesize){
-			startpos = data = p = _data;
-			filesize = _filesize;
-			endpos = startpos + filesize;
-		}
-		bool isValid(){
-			return data != nullptr
-				&&  startpos <= p && p <= endpos;
-		};
-	};
 	AssetFILE72 dummyFILE72;
 	std::vector<AssetFILE72> fpvec;
 	Size visibleSize;
+	Size DrawAreaSize;
+	Vec2 DrawAreaLeftBottom;
 	Vec2 origin;
 	DrawNode* drawNode;
 	Label* text;
@@ -253,12 +262,18 @@ private:
 
 public:
 	int SetBackgroundColor(int Red, int Green, int Blue);
+	int GetScreenState(int *SizeX, int *SizeY, int *ColorBitDepth);
+	int SetDrawArea(int x1, int y1, int x2, int y2);
 	int LoadGraphScreen(int x, int y, char *GraphName, int TransFlag = TRUE);
+	int LoadDivGraph(char *FileName, int AllNum, int XNum, int YNum, int XSize, int YSize, int *HandleBuf);
+	int DerivationGraph(int SrcX, int SrcY, int Width, int Height, int SrcGraphHandle);
+
 	int LoadGraph(char *FileName);
+	int DeleteGraph(int GrHandle);
+	int InitGraph();
 	int ScreenFlip();
 	int ClearDrawScreen();
 	int GetGraphSize(int GrHandle, int *SizeXBuf, int *SizeYBuf);
-
 	int DrawGraph(int x, int y, int GrHandle, int TransFlag = TRUE);
 	int DrawTurnGraph(int x, int y, int GrHandle, int TransFlag = TRUE);
 	int DrawExtendGraph(int x1, int y1, int x2, int y2,	int GrHandle, int TransFlag = TRUE);
@@ -278,7 +293,6 @@ public:
 	int SetFontSize(int FontSize); 
 	//int ChangeFont(char *FontName);
 	
-	///////////////////////////////////YET//////////////////////////
 	int SetCreateSoundDataType(int SoundDataType);
 	int LoadSoundMem(char *FileName);
 	int PlaySoundMem(int SoundHandle, int PlayType, int TopPositionFlag = TRUE);
@@ -286,16 +300,6 @@ public:
 	int StopSoundMem(int SoundHandle);
 	int DeleteSoundMem(int SoundHandle);
 	int InitSoundMem();
-	int ChangePanSoundMem(int PanPal, int SoundHandle);//( -255 ～ 255 ＋は左の音量を下げ、－は右の音量を下げる)
-	int ChangeVolumeSoundMem(int VolumePal, int SoundHandle);//[0,256)
-	int ChangeNextPlayPanSoundMem(int PanPal, int SoundHandle);
-	int ChangeNextPlayVolumeSoundMem(int VolumePal, int SoundHandle);
-	int SetFrequencySoundMem(int FrequencyPal, int SoundHandle);
-	int SetLoopPosSoundMem(int LoopTime, int SoundHandle);
-	int SetLoopSamplePosSoundMem(int LoopSamplePosition, int SoundHandle);
-	int SetCurrentPositionSoundMem(int SamplePosition, int SoundHandle);
-	int DuplicateSoundMem(int SrcSoundHandle);
-	///////////////////////////////////YET//////////////////////////
 	int GetNowCount();
 	long long GetNowHiPerformanceCount();
 	int GetDateTime(DATEDATA *DateBuf);
@@ -341,9 +345,6 @@ public:
 	long long FileRead_size(char *FilePath);
 	long long FileRead_tell(int FileHandle);
 	
-	//	int SetUseASyncLoadFlag(int Flag);
-	//	int CheckHandleASyncLoad(int Handle);
-
 };
 
 
@@ -351,8 +352,15 @@ CCDxLib* Get_m_dxlib();
 
 #define MKCCDxFN(T,FN,PARAMS,ARGS)inline T FN PARAMS { return Get_m_dxlib()-> FN ARGS;}
 MKCCDxFN(int, SetBackgroundColor, (int Red, int Green, int Blue), (Red, Green, Blue))
+MKCCDxFN(int, GetScreenState, (int *SizeX, int *SizeY, int *ColorBitDepth), (SizeX,SizeY,ColorBitDepth))
+MKCCDxFN(int, SetDrawArea, (int x1, int y1, int x2, int y2), (x1,y1,x2,y2))
 MKCCDxFN(int, LoadGraphScreen, (int x, int y, char *GraphName, int TransFlag = TRUE), (x, y, GraphName, TransFlag))
 MKCCDxFN(int, LoadGraph, (char *FileName), (FileName))
+MKCCDxFN(int, LoadDivGraph, (char *FileName, int AllNum, int XNum, int YNum, int XSize, int YSize, int *HandleBuf), (FileName, AllNum, XNum, YNum, XSize, YSize, HandleBuf))
+MKCCDxFN(int, DerivationGraph, (int SrcX, int SrcY, int Width, int Height, int SrcGraphHandle), (SrcX, SrcY, Width, Height, SrcGraphHandle))
+
+MKCCDxFN(int, DeleteGraph, (int GrHandle), (GrHandle))
+MKCCDxFN(int, InitGraph, (), ())
 MKCCDxFN(int, ClearDrawScreen, (), ())
 MKCCDxFN(int, GetGraphSize, (int GrHandle, int *SizeXBuf, int *SizeYBuf), (GrHandle, SizeXBuf, SizeYBuf))
 MKCCDxFN(int, DrawGraph, (int x, int y, int GrHandle, int TransFlag = TRUE), (x, y, GrHandle, TransFlag))
@@ -373,6 +381,15 @@ MKCCDxFN(int, DrawString, (int x, int y,const char *String, unsigned int Color),
 int DrawFormatString(int x, int y, unsigned int Color, const char *FormatString, ...);
 MKCCDxFN(int, SetFontSize, (int FontSize), (FontSize))
 //MKCCDxFN(int, ChangeFont, (char *FontName), (FontName))
+MKCCDxFN(int, SetCreateSoundDataType, (int SoundDataType), (SoundDataType))
+MKCCDxFN(int, LoadSoundMem, (char *FileName), (FileName))
+MKCCDxFN(int, PlaySoundMem, (int SoundHandle, int PlayType, int TopPositionFlag = TRUE), (SoundHandle, PlayType, TopPositionFlag))
+MKCCDxFN(int, CheckSoundMem, (int SoundHandle), (SoundHandle))
+MKCCDxFN(int, StopSoundMem, (int SoundHandle), (SoundHandle))
+MKCCDxFN(int, DeleteSoundMem, (int SoundHandle), (SoundHandle))
+MKCCDxFN(int, InitSoundMem,(),())
+
+
 MKCCDxFN(int, GetNowCount, (), ())
 MKCCDxFN(long long, GetNowHiPerformanceCount, (), ())
 MKCCDxFN(int, GetDateTime, (DATEDATA *DateBuf), (DateBuf))
@@ -412,8 +429,6 @@ MKCCDxFN(int, FileRead_getc, (int FileHandle), (FileHandle))
 MKCCDxFN(long long, FileRead_size, (char *FilePath), (FilePath))
 MKCCDxFN(long long, FileRead_tell, (int FileHandle), (FileHandle))
 int FileRead_scanf(int FileHandle, char *Format, ...);
-
-
 int DxLib_End();
 
 

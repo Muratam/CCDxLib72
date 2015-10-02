@@ -1,94 +1,85 @@
 ﻿#include "DxLib.h"
 
-int Handle;
+//CCDxLib72のサンプル２
+
+int HWhandle,BackGroundHandle;
+int lh[12];
 float xx = 0,yy = 0;
-int BackHandle;
-int MHandle = 0;
-int SHandle;
-int lsih,lsihcocos;
+int MHandle ,SHandle;
+int dd;
+
+//DxLib_init()を呼ぶ前に宣言すべき関数郡はここで宣言する。
 void AppDelegate::CCDxInit(){
-	SetGraphMode(800, 600);
-	ChangeWindowMode(TRUE);
-	SetMainWindowText("Chihaya is God");
-	EMULATE_TOUCH_BY_MOUSEFUNCTIONS();
-	SetBackgroundColor(200, 100, 255);
+	SetGraphMode(800, 600);             //画面サイズ設定
+	ChangeWindowMode(TRUE);             //フルスクリーンにするか(TRUEなのでしない)
+	SetMainWindowText("CCDxLib72");     //
+	EMULATE_TOUCH_BY_MOUSEFUNCTIONS();  //タッチ操作でマウスの関数を反応できるように
+	SetBackgroundColor(200, 100, 255);  //画面の初期色の設定
 }
 
-std::string wpath;
-std::string SinC = "A";
-char cc[256];
-
+//ファイルの読み込みなどの初期処理はここで行う。
 void CCDxStart(){
-	int hh = FileRead_open("read.txt");
-
-
-	lsihcocos = LoadSoftImage("HelloWorld.png");
-	lsih = MakeARGB8ColorSoftImage(100,200);
 	
-	Handle = LoadGraph("HelloWorld.png");
-	BackHandle = LoadGraph("wing.jpg");
-
+	//画像の読み込み
+	HWhandle = LoadGraph("HelloWorld.png");
+	BackGroundHandle = LoadGraph("wing.jpg");
+	LoadDivGraph("HelloWorld.png",12,3,4,50,30,lh);
+	
+	
 	Get_m_dxlib()->SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMPRESS);
 	MHandle = Get_m_dxlib()->LoadSoundMem("res/twilightsky.mp3");
 	Get_m_dxlib()->SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMNOPRESS);
 	SHandle = Get_m_dxlib()->LoadSoundMem("res/Attack.mp3");
-	//Get_m_dxlib()->PlaySoundMem(MHandle,DX_PLAYTYPE_BACK);
+	Get_m_dxlib()->PlaySoundMem(MHandle,DX_PLAYTYPE_BACK);
 
+	//使用する仮想ボタンはここで宣言する
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_DOWN);
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_UP);
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_RIGHT);
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_LEFT);
-
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_T);
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_R);
-	FillSoftImage(lsih, 0, 100, 255, 100);
-	
+	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_A);
 }
 
 
-
-
+//毎フレーム呼ばれるゲームループ
 void CCDxLoop(float deltaTime){
+	//おなじみ
 	ClearDrawScreen();
-	DrawExtendGraph(0, 0, 840, 600, BackHandle);
-
-	DrawString(100, 350, wpath.c_str(), 0);
-	DrawString(200, 400,cc, 0);
-	DrawString(400, 450, SinC.c_str(), 0);
 	
-	if (CheckHitKey(KEY_INPUT_RIGHT))xx +=1;
+	//画像を描画したり、
+	DrawExtendGraph(0, 0, 840, 600, BackGroundHandle);
+	for (int h = 0,i = 0; h < 4; h++)
+		for (int w = 0; w < 3; w++,i++)
+			DrawGraph(xx * 5 + 53 * w, yy * 5 + 33 * h, lh[i]);
+	
+	//音楽を再生したり
+	if (CheckHitKey(KEY_INPUT_A))PlaySoundMem(SHandle, DX_PLAYTYPE_BACK);
+	if (CheckHitKey(KEY_INPUT_B))PlaySoundMem(MHandle, DX_PLAYTYPE_BACK);
+	if (CheckHitKey(KEY_INPUT_C))StopSoundMem(MHandle);
+	
+	//Android ?
+	if (CheckHitKey(KEY_INPUT_T))SetDrawArea(50, 100, 400, 200);
+	if (CheckHitKey(KEY_INPUT_R))SetDrawArea(0, 0, 800, 600);
+
+	//スマホの戻るボタン、もしくはESCキーで終了する
+	if (CheckHitKey(KEY_INPUT_ESCAPE))DxLib_End();
+
+	//キーボード操作も仮想ボタンでスマホで操作できる
+	if (CheckHitKey(KEY_INPUT_RIGHT))xx += 1;
 	if (CheckHitKey(KEY_INPUT_LEFT))xx -= 1;
 	if (CheckHitKey(KEY_INPUT_DOWN))yy += 1;
 	if (CheckHitKey(KEY_INPUT_UP))yy -= 1;
-	//if (CheckHitKey(KEY_INPUT_A))Get_m_dxlib()->PlaySoundMem(SHandle, DX_PLAYTYPE_LOOP);
-	if (CheckHitKey(KEY_INPUT_ESCAPE))DxLib_End();
-	if (CheckHitKey(KEY_INPUT_R))SetFontSize(16);
-	if (CheckHitKey(KEY_INPUT_E))SetFontSize(32);
-	if (CheckHitKey(KEY_INPUT_T))FillSoftImage(lsih,0,72,172,72);
-	if (CheckHitKey(KEY_INPUT_R)) DrawRectGraph(xx, yy,0,0,22,72, Handle);
-	else DrawGraph(xx * 3, yy * 3, Handle);
-	DrawPixelSoftImage(lsih,xx,yy,0,0,0,255);
-	DrawSoftImage(0, 0, lsih);
+	if (CheckHitKey(KEY_INPUT_R)) DrawRectGraph(xx, yy, 0, 0, 72, 72, HWhandle);
+	else DrawGraph(xx, yy, HWhandle);
 
+
+	//マウス操作をスマホならタッチで操作できる
 	int mx = 0, my = 0;
-	GetMousePoint(&mx,&my);
-	
-	for (int i = 0; i < 10; i++){
-		for (int j = 0; j < 10; j++){
-			//DrawGraph(100 * i, 100 * j, Handle);
-			//DrawGraph(100 * i, 100 * j + 50, Handle);
-			//DrawFormatString(100 * i, 100 * j, GetColor(222, 0, 0), "%d", mx+i);
-			//DrawFormatString(100 * i, 100 * j + 50, GetColor(0, 222, 0), "%d", my+j);
-		}
-	} 
-	for (int i = 0; i < 120; i++){
-		mx += 2; my += 2;
-		//DrawRotaGraph(mx, my,1.0,i/10.0,Handle);
-		//DrawRotaGraph(mx, my,1.0+i/100.0,i/3.14159, Handle);
-		DrawBox(mx -20,my -20,mx + 20 ,my + 20,GetColor(0,100,100),TRUE);
-		//if (GetMouseInput() & MOUSE_INPUT_LEFT) DrawString(mx, my + 60, "Touch", GetColor(222, 0, 0));
-	}
-	Get_m_dxlib()->ScreenFlip();
+	GetMousePoint(&mx, &my);
+	DrawRotaGraph(mx, my,1.0+mx/1000.0,my/3.14159, HWhandle);
+
 }
 
 

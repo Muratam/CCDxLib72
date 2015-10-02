@@ -28,7 +28,10 @@ bool CCDxLib::init(){
     if ( !Layer::init() )return false;
 	for (int i = 0; i < 100; i++)KeyPushed[i] = false;
 	for (int i = 0; i < 8; i++)MousePushed[i] = false;
-    this->visibleSize = Director::getInstance()->getWinSize();
+	this->DrawAreaSize = this->visibleSize
+		= Director::getInstance()->getWinSize();
+	this->DrawAreaLeftBottom = Size(0, 0);
+
 	this->origin = Director::getInstance()->getVisibleOrigin();
 	
 	m_dxlib = this;
@@ -102,6 +105,7 @@ int DxLib_End(){
 void CCDxLib::update(float delta){
 
 	CCDxLoop(delta);
+	ScreenFlip();
 }
 
 void CCDxLib::EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate){
@@ -129,6 +133,22 @@ void CCDxLib::EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate){
 /////////////////////////////////////////////////
 
 CCDxLib* Get_m_dxlib(){ return m_dxlib; }
+
+int CCDxLib::GetScreenState(int *SizeX, int *SizeY, int *ColorBitDepth){
+	*SizeX = visibleSize.width;
+	*SizeY = visibleSize.height;
+	*ColorBitDepth = 32;
+	return 0;
+}
+int CCDxLib::SetDrawArea(int x1, int y1, int x2, int y2){
+	int w = x1 < x2 ? x2 - x1 : x1 - x2;
+	int h = y1 < y2 ? y2 - y1 : y1 - y2;
+	rendertexture->initWithWidthAndHeight(w,h, Texture2D::PixelFormat::RGBA8888, 0);
+	rendertexture->setPosition((x1 < x2 ? x1 : x2) + w / 2.0,visibleSize.height -((y1 < y2 ? y1 : y2) + h / 2.0));
+	DrawAreaSize = Size(w,h);
+	DrawAreaLeftBottom = Vec2(x1 < x2 ? x1 : x2,visibleSize.height - (y1 < y2 ? y2  : y1));
+	return 0;
+}
 
 int CCDxLib::ScreenFlip(){
 	drawNode->visit();
@@ -167,25 +187,87 @@ int CCDxLib::LoadGraphScreen(int x, int y, char *GraphName, int TransFlag){
 
 }
 int CCDxLib::LoadGraph(char *FileName){
-
 	textureCache->addImage(FileName);
 	//textureCache->addImageAsync(FileName,);
 	auto texture = textureCache->getTextureForKey(FileName);
 	if (texture == nullptr) return -1;
 	GraphicHandles.push_back(FileName);
 	return GraphicHandles.size() - 1;
+}
 
+int CCDxLib::LoadDivGraph(char *FileName, int AllNum, int XNum, int YNum, int XSize, int YSize, int *HandleBuf){
+	textureCache->addImage(FileName);
+	auto texture = textureCache->getTextureForKey(FileName);
+	if (texture == nullptr) return -1;
+	
+	for (int y = 0, i = 0; y < YNum && i < AllNum; y++){
+		for (int x = 0; x < XNum; x++){
+			DivGrapichHandles.push_back(DivGraphic(FileName, Rect(x * XSize, y * YSize, XSize, YSize)));
+			HandleBuf[i] =  - DivGrapichHandles.size() - 1;
+			i++;
+		}	
+	}
+	return 0;
+}
+int CCDxLib::DerivationGraph(int SrcX, int SrcY, int Width, int Height, int SrcGraphHandle){
+	bool isDivedGraph = false;
+	if (SrcGraphHandle == -1)return -1;
+	if (SrcGraphHandle < 0){
+		SrcGraphHandle = (-SrcGraphHandle) - 2;
+		if ((unsigned int)SrcGraphHandle >= DivGrapichHandles.size())return -1;
+		isDivedGraph = true;
+	}else {
+		if ((unsigned int)SrcGraphHandle >= GraphicHandles.size()) return -1;
+	}
+	Rect rect;
+	if(isDivedGraph ) rect =  DivGrapichHandles[SrcGraphHandle].rect ;
+	if (isDivedGraph)
+		DivGrapichHandles.push_back(DivGraphic(
+			DivGrapichHandles[SrcGraphHandle].FileName,
+			Rect(
+			SrcX + rect.origin.x,
+			SrcY + rect.origin.y,
+			SrcX + Width > rect.size.width ? rect.size.width - SrcX : Width,
+			SrcY + Height >rect.size.height? rect.size.height- SrcY : Height)));
+	else
+		DivGrapichHandles.push_back(DivGraphic(
+			GraphicHandles[SrcGraphHandle],	
+			Rect(SrcX, SrcY, Width, Height)));
+	return -DivGrapichHandles.size() - 1;
+}
+
+int CCDxLib::DeleteGraph(int GrHandle){
+	if (GrHandle < 0 || (unsigned int)GrHandle >= GraphicHandles.size()) return -1;
+	textureCache->removeTextureForKey(GraphicHandles[GrHandle]);
+	return 0;
+}
+int CCDxLib::InitGraph(){
+	textureCache->removeAllTextures();
+	return 0;
 }
 Sprite* CCDxLib::CheckGetSprite(int GrHandle){
+	bool isDivedGraph = false;
+	if (GrHandle == -1)return nullptr;
+	if (GrHandle < 0){
+		GrHandle = (-GrHandle) - 2;
+		if ((unsigned int)GrHandle >= DivGrapichHandles.size())return nullptr;
+		isDivedGraph = true;
+	}else {
+		if ((unsigned int)GrHandle >= GraphicHandles.size()) return nullptr;
+	}
 
-	if (GrHandle < 0 || (unsigned int)GrHandle >= GraphicHandles.size()) return nullptr;
-	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
-
+	auto texture = Director::getInstance()->getTextureCache()->
+		getTextureForKey( isDivedGraph ? 
+			DivGrapichHandles[GrHandle].FileName :
+			GraphicHandles[GrHandle]);
 	if (sppindex >= (int)SpritePool.size()){
 		SpritePOOL spr;
 		SpritePool.push_back(spr);
 	}
-	SpritePool[sppindex].initWithTexture(texture);
+	if (isDivedGraph) 
+		SpritePool[sppindex].initWithTexture(texture, DivGrapichHandles[GrHandle].rect);
+	else 
+		SpritePool[sppindex].initWithTexture(texture);
 	sppindex++;
 	if (texture == nullptr) return nullptr;
 	else return &SpritePool[sppindex - 1];
@@ -228,7 +310,6 @@ int CCDxLib::DrawRotaGraph3(int x, int y, int cx, int cy, double ExtRateX, doubl
 	image->setScale(ExtRateX,ExtRateY);
 	image->setRotation(FromRadian(Angle));
 	image->setFlippedX(TurnFlag == TRUE);
-	Director::getInstance()-
 	image->visit();
 	
 	return 0;
@@ -237,7 +318,17 @@ int CCDxLib::DrawRectGraph(int DestX, int DestY, int SrcX, int SrcY, int Width, 
 	auto image = CheckGetSprite(GrHandle);
 	if (image == nullptr)return -1;
 	auto size = image->getContentSize();
-	image->setTextureRect(Rect(SrcX, SrcY, Width, Height));
+
+	if (GrHandle < 0){
+		Rect rect = DivGrapichHandles[(-GrHandle) - 2].rect;
+		Rect rect2 =Rect(
+			SrcX + rect.origin.x,
+			SrcY + rect.origin.y,
+			SrcX + Width > rect.size.width ? rect.size.width - SrcX : Width,
+			SrcY + Height >rect.size.height ? rect.size.height - SrcY : Height);
+		image->setTextureRect(rect2);
+	}else 
+		image->setTextureRect(Rect(SrcX, SrcY, Width, Height));
 	image->setPosition(DxVec2(DestX,DestY));
 	image->setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
 	image->setScale(1,1);
@@ -254,7 +345,6 @@ unsigned int CCDxLib::GetColor(int Red, int Green, int Blue){
 
 int CCDxLib::DrawLine(int x1, int y1, int x2, int y2, unsigned int Color){
 	drawNode->drawSegment(DxVec2(x1,y1), DxVec2(x2,y2), 0.5f,DxColor(Color));
-	
 	return 0;
 }
 int CCDxLib::DrawBox(int x1, int y1, int x2, int y2, unsigned int Color, int FillFlag){
@@ -435,8 +525,6 @@ int CCDxLib::SetCreateSoundDataType(int SoundDataType){
 }
 int CCDxLib::LoadSoundMem(char *FileName){
 	switch (SoundDataType){
-//#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32 
-	//default:
 	case DX_SOUNDDATATYPE_MEMPRESS:
 		simpleAudioEngine->preloadBackgroundMusic(FileName);
 		MusicHandles.push_back(MusicHandle(true, FileName));
@@ -474,8 +562,8 @@ int CCDxLib::CheckSoundMem(int SoundHandle){
 			if (CurrentPlayedBGMName != MusicHandles[SoundHandle].FileName)return 0;
 			else return simpleAudioEngine->isBackgroundMusicPlaying();
 		}else{
-			//Sorry!!!!Cocos whether SE is playing can't be checked !
-			return -1;
+			//Sorry!!!!in Cocos, whether SE is playing can't be checked !
+			return 0;
 		}
 	}else return -1;
 }
@@ -485,10 +573,28 @@ int CCDxLib::StopSoundMem(int SoundHandle){
 			if (CurrentPlayedBGMName != MusicHandles[SoundHandle].FileName)return 0;
 			else simpleAudioEngine->pauseBackgroundMusic();
 		}else{
+			//•¡”–Â‚Á‚Ä‚¢‚½‚Æ‚µ‚Ä‚àA—p“r“I‚É‚ÍÅŒã‚Ì‚ðŽ~‚ß‚ê‚Î‚æ‚¢‚¾‚ë‚¤
 			simpleAudioEngine->stopEffect(MusicHandles[SoundHandle].SE_ID);
 			return -1;
 		}
 	}else return -1;
+	return 0;
+}
+int CCDxLib::DeleteSoundMem(int SoundHandle){
+	StopSoundMem(SoundHandle);
+	if (CheckMusicHandle(SoundHandle)){
+		if (MusicHandles[SoundHandle].isBGM){
+			return 0;//Streaming so cannot delete;
+		}else{
+			simpleAudioEngine->unloadEffect(MusicHandles[SoundHandle].FileName.c_str());
+			return 0;
+		}
+	}else return -1;
+}
+int CCDxLib::InitSoundMem(){
+	for (auto& mh : MusicHandles){
+		if (!mh.isBGM) simpleAudioEngine->unloadEffect(mh.FileName.c_str());
+	}
 	return 0;
 }
 
@@ -861,7 +967,7 @@ void CCDxLib::onMouseUp(Event* evt){
 }
 void CCDxLib::onMouseMove(Event* evt){
 	EventMouse* e = (EventMouse*)evt;
-	MouseX = e->getCursorX();
+	MouseX =DxX( e->getCursorX());
 	MouseY =DxY( e->getCursorY());
 }
 void CCDxLib::onMouseScroll(Event* evt){
@@ -878,7 +984,7 @@ int CCDxLib::GetMousePoint(int *XBuf, int *YBuf){
 		if (GetTouchInputNum() > 0){
 			GetTouchInput(0,XBuf,YBuf,NULL,NULL);
 		}else{
-			*XBuf = LastTouchX;
+			*XBuf = DxX(LastTouchX);
 			*YBuf = DxY(LastTouchY);
 		}
 		return 0;
@@ -993,7 +1099,7 @@ int CCDxLib::GetTouchInput(int InputNo, int *PositionX, int *PositionY, int *ID,
 	int i = 0;
 	for (auto idxt = DxTouches.begin(); idxt != DxTouches.end();){
 		if (i == InputNo){
-			if (PositionX != nullptr)*PositionX = idxt->X;
+			if (PositionX != nullptr)*PositionX = DxX(idxt->X);
 			if (PositionY != nullptr)*PositionY = DxY(idxt->Y);
 			if (ID != nullptr)*ID = idxt->ID;
 			return 0;
@@ -1029,7 +1135,7 @@ void CCDxLib::EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode, char* ButtonFile
 		case ui::Widget::TouchEventType::ENDED:
 		case ui::Widget::TouchEventType::CANCELED:
 			Get_m_dxlib()->EmulateButtonExitCallback(KeyCode);
-			button->setOpacity(100);
+			button->setOpacity(150);
 			break;		
 		}
 	});
