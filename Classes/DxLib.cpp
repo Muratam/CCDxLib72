@@ -1,6 +1,5 @@
 #include "DxLib.h"
 #include <stdarg.h>
-#include <algorithm>
 #include <iostream>
 
 
@@ -38,6 +37,7 @@ bool CCDxLib::init(){
 	rendertexture = RenderTexture::create(visibleSize.width, visibleSize.height);
 	rendertexture->setPosition(visibleSize.width/2,visibleSize.height/2);
 	rendertexture->retain();
+	
 	this->addChild(rendertexture);
 	rendertexture->beginWithClear((float)SetBackGroundColorR / 255.0, (float)SetBackGroundColorG / 255.0, (float)SetBackGroundColorB / 255.0, 1.0);
 	RenderBegan = true;
@@ -130,49 +130,6 @@ void CCDxLib::EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate){
 
 CCDxLib* Get_m_dxlib(){ return m_dxlib; }
 
-int CCDxLib::SetBackgroundColor(int Red, int Green, int Blue){
-	SetBackGroundColorR = SetBackGroundColorR = Red;
-	SetBackGroundColorG = SetBackGroundColorG = Green;
-	SetBackGroundColorB = SetBackGroundColorB = Blue;
-	
-	return 0;
-}
-
-int CCDxLib::LoadGraphScreen(int x, int y, char *GraphName, int TransFlag){
-	int h = this->LoadGraph(GraphName);
-	if (h == -1)return -1;
-	if(DrawGraph(x,y,h,TransFlag) == -1)return -1 ;
-	return ScreenFlip();
-
-}
-
-int CCDxLib::LoadGraph(char *FileName){	
-
-	textureCache->addImage(FileName);
-	//textureCache->addImageAsync(FileName,);
-	auto texture = textureCache->getTextureForKey(FileName);
-	if (texture == nullptr) return -1;
-	GraphicHandles.push_back(FileName);
-	return GraphicHandles.size() - 1;
-	
-}
-
-Sprite* CCDxLib::CheckGetSprite(int GrHandle){
-	
-	if (GrHandle < 0 || (unsigned int)GrHandle >= GraphicHandles.size()) return nullptr;
-	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
-	
-	if (sppindex >= (int)SpritePool.size()){
-		SpritePOOL spr;
-		SpritePool.push_back(spr);
-	}
-	SpritePool[sppindex].initWithTexture(texture);
-	sppindex++;
-	if (texture == nullptr) return nullptr;
-	else return &SpritePool[sppindex-1];
-	
-}
-
 int CCDxLib::ScreenFlip(){
 	drawNode->visit();
 	if (!RenderEnded){
@@ -184,7 +141,6 @@ int CCDxLib::ScreenFlip(){
 	RenderBegan = false;
 	return 0;
 }
-
 int CCDxLib::ClearDrawScreen(){
 	if (!RenderBegan){
 		drawNode->clear();
@@ -196,7 +152,45 @@ int CCDxLib::ClearDrawScreen(){
 	RenderEnded = false;
 	return 0;
 }
+int CCDxLib::SetBackgroundColor(int Red, int Green, int Blue){
+	SetBackGroundColorR = SetBackGroundColorR = Red;
+	SetBackGroundColorG = SetBackGroundColorG = Green;
+	SetBackGroundColorB = SetBackGroundColorB = Blue;
 
+	return 0;
+}
+int CCDxLib::LoadGraphScreen(int x, int y, char *GraphName, int TransFlag){
+	int h = this->LoadGraph(GraphName);
+	if (h == -1)return -1;
+	if (DrawGraph(x, y, h, TransFlag) == -1)return -1;
+	return ScreenFlip();
+
+}
+int CCDxLib::LoadGraph(char *FileName){
+
+	textureCache->addImage(FileName);
+	//textureCache->addImageAsync(FileName,);
+	auto texture = textureCache->getTextureForKey(FileName);
+	if (texture == nullptr) return -1;
+	GraphicHandles.push_back(FileName);
+	return GraphicHandles.size() - 1;
+
+}
+Sprite* CCDxLib::CheckGetSprite(int GrHandle){
+
+	if (GrHandle < 0 || (unsigned int)GrHandle >= GraphicHandles.size()) return nullptr;
+	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
+
+	if (sppindex >= (int)SpritePool.size()){
+		SpritePOOL spr;
+		SpritePool.push_back(spr);
+	}
+	SpritePool[sppindex].initWithTexture(texture);
+	sppindex++;
+	if (texture == nullptr) return nullptr;
+	else return &SpritePool[sppindex - 1];
+
+}
 int CCDxLib::GetGraphSize(int GrHandle, int *SizeXBuf, int *SizeYBuf){
 	auto texture = Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle]);
 	if (texture == nullptr) return -1;
@@ -204,32 +198,26 @@ int CCDxLib::GetGraphSize(int GrHandle, int *SizeXBuf, int *SizeYBuf){
 	*SizeYBuf = texture->getContentSize().height;
 	return 0;
 }
-
 int CCDxLib::DrawGraph(int x, int y, int GrHandle, int TransFlag){
 	return DrawRotaGraph3(x, y, 0, 0,1.0, 1.0, 0.0, GrHandle, TransFlag, false);
 }
-
 int CCDxLib::DrawTurnGraph(int x, int y, int GrHandle, int TransFlag){
 	return DrawRotaGraph3(x, y, 0, 0, 1.0, 1.0, 0.0, GrHandle, TransFlag, true);
 }
-
 int CCDxLib::DrawExtendGraph(int x1, int y1, int x2, int y2, int GrHandle, int TransFlag){
 	return DrawRotaGraph3(x1, y1, 0, 0,
 		(float)(x2 - x1) / GetGraphSizeX(GrHandle), 
 		(float)(y2 - y1) / GetGraphSizeY(GrHandle), 
 		0, GrHandle, TransFlag, false);
 }
-
 int CCDxLib::DrawRotaGraph(int x, int y, double ExtRate, double Angle, int GrHandle, int TransFlag, int TurnFlag){
 	int w,h;
 	GetGraphSize(GrHandle,&w,&h);
 	return DrawRotaGraph3(x+w/2,y+h/2,w/2.0,h/2.0,ExtRate,ExtRate,Angle,GrHandle,TransFlag,TurnFlag);
 }
-
 int CCDxLib::DrawRotaGraph2(int x, int y, int cx, int cy, double ExtRate, double Angle, int GrHandle, int TransFlag, int TurnFlag){
 	return DrawRotaGraph3(x,y,cx,cy,ExtRate,ExtRate,Angle,GrHandle,TransFlag,TurnFlag);
 }
-
 int CCDxLib::DrawRotaGraph3(int x, int y, int cx, int cy, double ExtRateX, double ExtRateY, double Angle, int GrHandle, int TransFlag, int TurnFlag){
 	auto image = CheckGetSprite(GrHandle);
 	if (image == nullptr)return -1;
@@ -240,11 +228,11 @@ int CCDxLib::DrawRotaGraph3(int x, int y, int cx, int cy, double ExtRateX, doubl
 	image->setScale(ExtRateX,ExtRateY);
 	image->setRotation(FromRadian(Angle));
 	image->setFlippedX(TurnFlag == TRUE);
+	Director::getInstance()-
 	image->visit();
 	
 	return 0;
 }
-
 int CCDxLib::DrawRectGraph(int DestX, int DestY, int SrcX, int SrcY, int Width, int Height, int GrHandle, int TransFlag, int TurnFlag){
 	auto image = CheckGetSprite(GrHandle);
 	if (image == nullptr)return -1;
@@ -266,6 +254,7 @@ unsigned int CCDxLib::GetColor(int Red, int Green, int Blue){
 
 int CCDxLib::DrawLine(int x1, int y1, int x2, int y2, unsigned int Color){
 	drawNode->drawSegment(DxVec2(x1,y1), DxVec2(x2,y2), 0.5f,DxColor(Color));
+	
 	return 0;
 }
 int CCDxLib::DrawBox(int x1, int y1, int x2, int y2, unsigned int Color, int FillFlag){
@@ -306,7 +295,7 @@ int CCDxLib::DrawPixel(int x, int y, unsigned int Color){
 }
 
 
-int CCDxLib::DrawString(int x, int y, char *String, unsigned int Color){
+int CCDxLib::DrawString(int x, int y, const char *String, unsigned int Color){
 	if (x >= visibleSize.width || y >= visibleSize.height || String == "") return 0;
 	
 
@@ -414,8 +403,7 @@ int CCDxLib::DrawString(int x, int y, char *String, unsigned int Color){
 	
 	return 0;
 }
-
-int DrawFormatString(int x, int y, unsigned int Color, char *FormatString, ...){
+int DrawFormatString(int x, int y, unsigned int Color, const char *FormatString, ...){
 	va_list ap;
 	va_start(ap, FormatString);
 	char* buf = (char*)malloc(102400);
@@ -426,7 +414,6 @@ int DrawFormatString(int x, int y, unsigned int Color, char *FormatString, ...){
 	free(buf);
 	return res;
 }
-
 int CCDxLib::SetFontSize(int FontSize){
 	text->setSystemFontSize(FontSize);
 	return 0;
@@ -1054,26 +1041,28 @@ void CCDxLib::EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode, char* ButtonFile
 
 	button->setOpacity(100);
 	if (PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION || PositionY == USE_EMULATE_BUTTON_DEFAULT_POSITION){
+		auto width = button->getContentSize().width;
+		auto height = button->getContentSize().height;
 		switch (KeyCode){
 		case KEY_INPUT_LEFT	:
-			PositionX = visibleSize.width - button->getSize().width * 1.1 *3;
-			PositionY = visibleSize.height - button->getSize().height;
+			PositionX = visibleSize.width -  width * 1.1 *3;
+			PositionY = visibleSize.height - height;
 			break;
 		case KEY_INPUT_RIGHT:
-			PositionX = visibleSize.width - button->getSize().width * 1.1 * 1;
-			PositionY = visibleSize.height - button->getSize().height;
+			PositionX = visibleSize.width -  width * 1.1 * 1;
+			PositionY = visibleSize.height - height;
 			break;
 		case KEY_INPUT_UP:
-			PositionX = visibleSize.width - button->getSize().width * 1.1 * 2;
-			PositionY = visibleSize.height - button->getSize().height *1.1 *  2;
+			PositionX = visibleSize.width -  width * 1.1 * 2;
+			PositionY = visibleSize.height - height *1.1 *  2;
 			break;
 		case KEY_INPUT_DOWN:
-			PositionX = visibleSize.width - button->getSize().width * 1.1 * 2;
-			PositionY = visibleSize.height - button->getSize().height;
+			PositionX = visibleSize.width -  width * 1.1 * 2;
+			PositionY = visibleSize.height - height;
 			break;
 		default:
-			PositionX = button->getSize().width * 1.1 *(0.7 + EmulateButtonNum);
-			PositionY = visibleSize.height - button->getSize().height;
+			PositionX = width * 1.1 *(0.7 + EmulateButtonNum);
+			PositionY = visibleSize.height - height;
 			EmulateButtonNum++;
 			break;
 
@@ -1091,7 +1080,6 @@ int CCDxLib::LoadSoftImage(char *FileName){
 	SoftImageHandles[SoftImageHandles.size() - 1].initWithImageFile(FileName);
 	return SoftImageHandles.size() - 1;
 }
-
 int CCDxLib::GetSoftImageSize(int SIHandle, int *Width, int *Height){
 	if (SIHandle < 0 || (unsigned int)SIHandle > SoftImageHandles.size()) return -1;
 	auto& image = SoftImageHandles[SIHandle];
@@ -1099,7 +1087,6 @@ int CCDxLib::GetSoftImageSize(int SIHandle, int *Width, int *Height){
 	*Height = image.getHeight();
 	return 0;
 }
-
 int CCDxLib::DrawPixelSoftImage(int SIHandle, int x, int y, int r, int g, int b, int a){
 	if (SIHandle < 0 || (unsigned int)SIHandle > SoftImageHandles.size()) return -1;
 	auto& image = SoftImageHandles[SIHandle];
@@ -1120,7 +1107,6 @@ int CCDxLib::DrawPixelSoftImage(int SIHandle, int x, int y, int r, int g, int b,
 	if (bpp == 32){ *p = uca;  p++; }
 	return 0;
 }
-
 int CCDxLib::MakeARGB8ColorSoftImage(int SizeX, int SizeY){
 	ImagePOOL image;
 	SoftImageHandles.push_back(image);
@@ -1130,7 +1116,6 @@ int CCDxLib::MakeARGB8ColorSoftImage(int SizeX, int SizeY){
 		buffer, sizeof(unsigned char) * size, SizeX, SizeY, 32);
 	return SoftImageHandles.size() - 1;
 }
-
 int CCDxLib::MakeXRGB8ColorSoftImage(int SizeX, int SizeY){
 	ImagePOOL image;
 	SoftImageHandles.push_back(image);
@@ -1140,7 +1125,6 @@ int CCDxLib::MakeXRGB8ColorSoftImage(int SizeX, int SizeY){
 		buffer, sizeof(unsigned char) * size, SizeX, SizeY, 24);
 	return SoftImageHandles.size() - 1;
 }
-
 int CCDxLib::DrawSoftImage(int x, int y, int SIHandle){
 	if (SIHandle < 0 || (unsigned int)SIHandle >= SoftImageHandles.size()) return -1;
 	auto& image = SoftImageHandles[SIHandle];
@@ -1163,7 +1147,6 @@ int CCDxLib::DrawSoftImage(int x, int y, int SIHandle){
 
 	return 0;
 }
-
 int CCDxLib::GetPixelSoftImage(int SIHandle, int x, int y, int *r, int *g, int *b, int *a){
 	if (SIHandle < 0 || (unsigned int)SIHandle >= SoftImageHandles.size()) return -1;
 	auto& image = SoftImageHandles[SIHandle];
@@ -1182,7 +1165,6 @@ int CCDxLib::GetPixelSoftImage(int SIHandle, int x, int y, int *r, int *g, int *
 	if (bpp == 32){ucp = *p; *a = (int)ucp;  p++;}
 	return 0;
 }
-
 int CCDxLib::FillSoftImage(int SIHandle, int r, int g, int b, int a){
 	if (SIHandle < 0 || (unsigned int)SIHandle >= SoftImageHandles.size()) return -1;
 	auto& image = SoftImageHandles[SIHandle];
@@ -1213,6 +1195,110 @@ int CCDxLib::InitSoftImage(){
 	SoftImageHandles.clear();
 	return 0;
 }
+
+FILE* CCDxLib::UserDatafopen(const char* Filename, const char* Mode){
+	auto fileutils = FileUtils::getInstance();
+	std::string wpath = fileutils->getWritablePath() + Filename;
+	return fopen(wpath.c_str(), Mode);
+}
+
+CCDxLib::AssetFILE72& CCDxLib::__getFilePointer(int FileHandle){
+	if (FileHandle < 0 || FileHandle >= fpvec.size())return dummyFILE72;
+	return fpvec[FileHandle];
+}
+int CCDxLib::FileRead_open(char *FilePath, int ASync){
+	ssize_t filesize = 0;
+	unsigned char *data = FileUtils::getInstance()->getFileData(FilePath, "r", &filesize);
+	if (data == nullptr) return -1;
+	fpvec.push_back(AssetFILE72(data, filesize));
+	return fpvec.size() - 1;
+}
+int CCDxLib::FileRead_close(int FileHandle){
+	auto& fp = __getFilePointer(FileHandle);
+	if (fp.data == nullptr) return -1;
+	free(fp.data);
+	return 0;
+}
+long long CCDxLib::FileRead_size(char *FilePath){
+	ssize_t filesize = 0;
+	unsigned char *data = FileUtils::getInstance()->getFileData(FilePath, "r", &filesize);
+	if (data == nullptr) return -1;
+	free(data);
+	return filesize;
+}
+long long CCDxLib::FileRead_tell(int FileHandle){
+	auto& fp = __getFilePointer(FileHandle);
+	if (!fp.isValid()) return -1;
+	if (fp.p < fp.data || fp.p >= fp.endpos);
+	return fp.p - fp.startpos;
+}
+int CCDxLib::FileRead_seek(int FileHandle, long long Offset, int Origin){
+	auto& fp = __getFilePointer(FileHandle);
+	if (!fp.isValid()) return -1;
+	switch (Origin){
+	case SEEK_SET:
+		fp.p = fp.startpos; break;
+	case SEEK_CUR:break;
+	case SEEK_END:fp.p = fp.endpos; break;
+	default:return -1;
+	}
+	fp.p += Offset;
+	if (fp.p < fp.startpos)fp.p = fp.startpos;
+	if (fp.p > fp.endpos) fp.p = fp.endpos;
+	return 0;
+}
+int CCDxLib::FileRead_read(void *Buffer, int ReadSize, int FileHandle){
+	auto& fp = __getFilePointer(FileHandle);
+	if (!fp.isValid()) return -1;
+	unsigned char * CBuffer = (unsigned char*)Buffer;
+	for (int i = 0; i < ReadSize && fp.p < fp.endpos; i++){
+		CBuffer[i] = fp.p[0];
+		fp.p++;
+	}
+	return 0;
+}
+int CCDxLib::FileRead_eof(int FileHandle){
+	auto& fp = __getFilePointer(FileHandle);
+	if (!fp.isValid()) return -1;
+	return fp.p == fp.endpos ? 0 : 1;
+}
+int CCDxLib::FileRead_gets(char *Buffer, int Num, int FileHandle){
+	auto& fp = __getFilePointer(FileHandle);
+	if (!fp.isValid()) return -1;
+	for (int i = 0; i < Num && fp.p < fp.endpos; i++){
+		Buffer[i] = fp.p[0];
+		fp.p++;
+		if ((char)fp.p[0] == '\n' || fp.p == fp.endpos){
+			if (Buffer[i] == '\r')Buffer[i] = '\0';		
+			for (int j = i + 1; j < Num; j++){
+				Buffer[j] = '\0';
+			}
+			if(fp.p < fp.endpos)fp.p++;
+			break;
+		}
+	}
+	return 0;
+}
+int CCDxLib::FileRead_getc(int FileHandle){
+	auto& fp = __getFilePointer(FileHandle);
+	if (!fp.isValid()) return -1;
+	char c = (char)(*fp.p);
+	fp.p++;
+	return c;
+}
+int FileRead_scanf(int FileHandle, char *Format, ...){
+	auto& fp = Get_m_dxlib()->__getFilePointer(FileHandle);
+	if (!fp.isValid()) return -1;
+	va_list ap;
+	va_start(ap, Format);
+	char buf[2048];
+	auto res = vsscanf(reinterpret_cast< char *>(fp.p), Format, ap);
+	FileRead_gets(buf, 2048, FileHandle);//Tonewline
+	va_end(ap);
+	if (FileRead_eof(FileHandle)==0)return -1;
+	return res;
+}
+
 
 
 

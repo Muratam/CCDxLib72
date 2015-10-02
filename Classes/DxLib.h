@@ -33,6 +33,15 @@ const long double __Pi = 3.14159265358979323846264338327950288L;
 #define LOBYTE(w) ((unsigned char)(((unsigned long)(w)) & 0xff))
 #endif
 
+#ifndef SEEK_SET
+#define SEEK_SET 0
+#endif
+#ifndef SEEK_CUR
+#define SEEK_CUR 1
+#endif
+#ifndef SEEK_END
+#define SEEK_END 2
+#endif
 
 struct DATEDATA{
 	
@@ -65,6 +74,7 @@ private:
 	};
 
 public:
+	//Should fclose or release? ~CCDxLib(){	}
 	static Scene* createScene(AppDelegate * app);
 	virtual bool init();
 	void update(float delta);
@@ -196,6 +206,27 @@ private:
 	std::vector <MusicHandle> MusicHandles;
 	std::string CurrentPlayedBGMName;
 	std::list <DxTouch> DxTouches;
+	struct AssetFILE72{
+		unsigned char * p ;
+		unsigned char * data ;
+		unsigned char * startpos ;
+		unsigned char * endpos ;
+		ssize_t filesize;
+		AssetFILE72(){
+			AssetFILE72(nullptr,0);
+		}
+		AssetFILE72(unsigned char * _data, ssize_t _filesize){
+			startpos = data = p = _data;
+			filesize = _filesize;
+			endpos = startpos + filesize;
+		}
+		bool isValid(){
+			return data != nullptr
+				&&  startpos <= p && p <= endpos;
+		};
+	};
+	AssetFILE72 dummyFILE72;
+	std::vector<AssetFILE72> fpvec;
 	Size visibleSize;
 	Vec2 origin;
 	DrawNode* drawNode;
@@ -243,7 +274,7 @@ public:
 	int DrawOval(int x, int y, int rx, int ry, unsigned int Color, int FillFlag, unsigned int segment = 72);
 	int DrawTriangle(int x1, int y1, int x2, int y2,int x3, int y3, unsigned int Color, int FillFlag);
 	int DrawPixel(int x, int y, unsigned int Color);
-	int DrawString(int x, int y, char *String, unsigned int Color);
+	int DrawString(int x, int y, const char *String, unsigned int Color);
 	int SetFontSize(int FontSize); 
 	//int ChangeFont(char *FontName);
 	
@@ -295,10 +326,24 @@ public:
 	int DeleteSoftImage(int SIHandle);
 	int InitSoftImage();
 
-	//int BltSoftImage(int SrcX, int SrcY, int SrcSizeX, int SrcSizeY, int SrcSIHandle, int DestX, int DestY, int DestSIHandle);
-	//int CreateGraphFromSoftImage(int SIHandle);
-	//int GetMouseInputLog(int *Button, int *ClickX, int *ClickY, int LogDelete);
-	//int LoadDivGraph(char *FileName, int AllNum,int XNum, int YNum,int XSize, int YSize, int *HandleBuf);
+	FILE* UserDatafopen(const char* Filename, const char* Mode);
+	inline std::string getUserDataPath(){ return FileUtils::getInstance()->getWritablePath(); }
+	//int CopyFileToUserDataPath(const char * AssetFilename);
+
+	AssetFILE72& __getFilePointer(int FileHandle);
+	int FileRead_open(char *FilePath, int ASync = FALSE);
+	int FileRead_close(int FileHandle);
+	int FileRead_seek(int FileHandle, long long Offset, int Origin);
+	int FileRead_read(void *Buffer, int ReadSize, int FileHandle);
+	int FileRead_eof(int FileHandle);
+	int FileRead_gets(char *Buffer, int Num, int FileHandle);
+	int FileRead_getc(int FileHandle);
+	long long FileRead_size(char *FilePath);
+	long long FileRead_tell(int FileHandle);
+	
+	//	int SetUseASyncLoadFlag(int Flag);
+	//	int CheckHandleASyncLoad(int Handle);
+
 };
 
 
@@ -324,37 +369,49 @@ MKCCDxFN(int, DrawCircle, (int x, int y, int r, unsigned int Color, int FillFlag
 MKCCDxFN(int, DrawOval, (int x, int y, int rx, int ry, unsigned int Color, int FillFlag, unsigned int segment = 72), (x, y, rx, ry, Color, FillFlag, segment))
 MKCCDxFN(int, DrawTriangle, (int x1, int y1, int x2, int y2, int x3, int y3, unsigned int Color, int FillFlag), (x1, y1, x2, y2, x3, y3, Color, FillFlag))
 MKCCDxFN(int, DrawPixel, (int x, int y, unsigned int Color), (x, y, Color))
-MKCCDxFN(int, DrawString, (int x, int y, char *String, unsigned int Color), (x, y, String, Color))
-int DrawFormatString(int x, int y, unsigned int Color, char *FormatString, ...);
+MKCCDxFN(int, DrawString, (int x, int y,const char *String, unsigned int Color), (x, y, String, Color))
+int DrawFormatString(int x, int y, unsigned int Color, const char *FormatString, ...);
 MKCCDxFN(int, SetFontSize, (int FontSize), (FontSize))
 //MKCCDxFN(int, ChangeFont, (char *FontName), (FontName))
-MKCCDxFN(int ,GetNowCount,(),())
-MKCCDxFN(long long ,GetNowHiPerformanceCount,(),())
-MKCCDxFN(int, GetDateTime,(DATEDATA *DateBuf),(DateBuf))
-MKCCDxFN(int, GetRand,(int RandMax),(RandMax))
-MKCCDxFN(int, SRand,(int Seed),(Seed))
-MKCCDxFN(int, CheckHitKey,(int KeyCode),(KeyCode))
+MKCCDxFN(int, GetNowCount, (), ())
+MKCCDxFN(long long, GetNowHiPerformanceCount, (), ())
+MKCCDxFN(int, GetDateTime, (DATEDATA *DateBuf), (DateBuf))
+MKCCDxFN(int, GetRand, (int RandMax), (RandMax))
+MKCCDxFN(int, SRand, (int Seed), (Seed))
+MKCCDxFN(int, CheckHitKey, (int KeyCode), (KeyCode))
 MKCCDxFN(int, CheckHitKeyAll, (), ())
-MKCCDxFN(int, GetHitKeyStateAll,(char *KeyStateBuf),(KeyStateBuf))
+MKCCDxFN(int, GetHitKeyStateAll, (char *KeyStateBuf), (KeyStateBuf))
 MKCCDxFN(int, SetMouseDispFlag, (int DispFlag), (DispFlag))
-MKCCDxFN(int, GetMousePoint,(int *XBuf, int *YBuf), (XBuf,YBuf))
+MKCCDxFN(int, GetMousePoint, (int *XBuf, int *YBuf), (XBuf, YBuf))
 MKCCDxFN(int, GetMouseInput, (), ())
 MKCCDxFN(int, GetMouseWheelRotVol, (), ())
 MKCCDxFN(int, GetTouchInputNum, (), ())
-MKCCDxFN(int, GetTouchInput, (int InputNo, int *PositionX, int *PositionY, int *ID, int *Device), (InputNo, PositionX,PositionY,ID,Device))
-MKCCDxFN(void, EMULATE_TOUCH_BY_MOUSEFUNCTIONS,(bool Emulate = true),(Emulate))
-MKCCDxFN(void, EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON, (int KeyCode, char* ButtonFileName, int PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION, int PositionY = USE_EMULATE_BUTTON_DEFAULT_POSITION, bool WriteKeyName = false), (KeyCode, ButtonFileName,  PositionX , PositionY,WriteKeyName))
-MKCCDxFN(void, EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON,(int KeyCode),(KeyCode))
+MKCCDxFN(int, GetTouchInput, (int InputNo, int *PositionX, int *PositionY, int *ID, int *Device), (InputNo, PositionX, PositionY, ID, Device))
+MKCCDxFN(void, EMULATE_TOUCH_BY_MOUSEFUNCTIONS, (bool Emulate = true), (Emulate))
+MKCCDxFN(void, EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON, (int KeyCode, char* ButtonFileName, int PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION, int PositionY = USE_EMULATE_BUTTON_DEFAULT_POSITION, bool WriteKeyName = false), (KeyCode, ButtonFileName, PositionX, PositionY, WriteKeyName))
+MKCCDxFN(void, EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON, (int KeyCode), (KeyCode))
 MKCCDxFN(int, LoadSoftImage, (char *FileName), (FileName))
 MKCCDxFN(int, GetSoftImageSize, (int SIHandle, int *Width, int *Height), (SIHandle, Width, Height))
 MKCCDxFN(int, GetPixelSoftImage, (int SIHandle, int x, int y, int *r, int *g, int *b, int *a), (SIHandle, x, y, r, g, b, a))
-MKCCDxFN(int, DrawSoftImage, (int x, int y, int SIHandle), (x,y,SIHandle))
-MKCCDxFN(int, DrawPixelSoftImage, (int SIHandle, int x, int y, int r, int g, int b, int a), (SIHandle,x,y,r,g,b,a))
-MKCCDxFN(int, MakeARGB8ColorSoftImage, (int SizeX, int SizeY), (SizeX,SizeY))
-MKCCDxFN(int, MakeXRGB8ColorSoftImage, (int SizeX, int SizeY), (SizeX,SizeY))
-MKCCDxFN(int, FillSoftImage, (int SIHandle, int r, int g, int b, int a),(SIHandle,r,g,b,a))
+MKCCDxFN(int, DrawSoftImage, (int x, int y, int SIHandle), (x, y, SIHandle))
+MKCCDxFN(int, DrawPixelSoftImage, (int SIHandle, int x, int y, int r, int g, int b, int a), (SIHandle, x, y, r, g, b, a))
+MKCCDxFN(int, MakeARGB8ColorSoftImage, (int SizeX, int SizeY), (SizeX, SizeY))
+MKCCDxFN(int, MakeXRGB8ColorSoftImage, (int SizeX, int SizeY), (SizeX, SizeY))
+MKCCDxFN(int, FillSoftImage, (int SIHandle, int r, int g, int b, int a), (SIHandle, r, g, b, a))
 MKCCDxFN(int, DeleteSoftImage, (int SIHandle), (SIHandle))
 MKCCDxFN(int, InitSoftImage, (), ())
+MKCCDxFN(FILE*, UserDatafopen, (const char* Filename, const char* Mode), (Filename, Mode))
+MKCCDxFN(std::string, getUserDataPath, (), ())
+MKCCDxFN(int, FileRead_open, (char *FilePath, int ASync = FALSE), (FilePath, ASync))
+MKCCDxFN(int, FileRead_close, (int FileHandle), (FileHandle))
+MKCCDxFN(int, FileRead_seek, (int FileHandle, long long Offset, int Origin), (FileHandle, Offset, Origin))
+MKCCDxFN(int, FileRead_read, (void *Buffer, int ReadSize, int FileHandle), (Buffer, ReadSize, FileHandle))
+MKCCDxFN(int, FileRead_eof, (int FileHandle), (FileHandle))
+MKCCDxFN(int, FileRead_gets, (char *Buffer, int Num, int FileHandle), (Buffer, Num, FileHandle))
+MKCCDxFN(int, FileRead_getc, (int FileHandle), (FileHandle))
+MKCCDxFN(long long, FileRead_size, (char *FilePath), (FilePath))
+MKCCDxFN(long long, FileRead_tell, (int FileHandle), (FileHandle))
+int FileRead_scanf(int FileHandle, char *Format, ...);
 
 
 int DxLib_End();
