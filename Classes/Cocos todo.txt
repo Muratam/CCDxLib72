@@ -1,12 +1,10 @@
-Androidビルドに使用するC++ファイルについて
-http://qiita.com/YosukeMitsugi/items/137f1b57f03945ad2d50
-
 ～概要～
   ・DxLibの関数をCocos2d-xで動かすライブラリCCDxlibです
   ・Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなどに移植出来るライブラリです
+  ・導入の仕方については HowTo.txtを参考にしてください。
 
 ～CCDxLibで実装した関数一覧～
-・一部のマイナー関数を除いて殆どの関数を実装しています。1003 0317 72個
+・一部のマイナー関数を除いて殆どの関数を実装しています。1004 0317 72個
   ・ウインドウ関係(6)
     SetGraphMode,ChangeWindowMode,SetMainWindowText 
     GetScreenState SetDrawArea ClearDrawScreen
@@ -98,8 +96,13 @@ http://qiita.com/YosukeMitsugi/items/137f1b57f03945ad2d50
   ・Midi,BMPの拡張子は対応していないかもしれません。mp3やpng,jpegを使用してください。
   ・リリースビルドをすると速くなる可能性があります。
     cocos compile -p android -m release のコマンドとかを使いましょう。
-
-
+  ・LoadSoftImageは一度に一回までです！注意してください！
+  ・ソースコード中に日本語をいれている場合、そのソースコードがUTF-8でないと文字化けします。
+    UTF-8で保存してください。Visual Studio では、文頭に
+    #pragma execution_character_set("utf-8") を宣言すればUTF-8を使用できます。
+  ・cocos2dx v3.8で作成しています。
+    バージョンアップで動かなくなることもあるかもしれないので、v3.8を推奨します。
+  ・一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です？
 
 
 
