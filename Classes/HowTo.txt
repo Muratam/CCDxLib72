@@ -66,3 +66,9 @@ CCDxLib72を利用してAndroidビルドする方法
 
 ⑤これであなたのDxLibで書いたコードがAndroidでも動きます！
 
+⑥一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！
+  proj.androidの
+    build.xml の二行目 project name = ""
+    AndroidManufest.xml の三行目 package= ""
+  を com.hogehoge みたいに変えましょう
+  表示名を変えるには、.project の 三行目を<name>を変えましょう

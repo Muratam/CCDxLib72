@@ -285,6 +285,15 @@ int CCDxLib::DrawRotaGraph2(int x, int y, int cx, int cy, double ExtRate, double
 int CCDxLib::DrawRotaGraph3(int x, int y, int cx, int cy, double ExtRateX, double ExtRateY, double Angle, int GrHandle, int TransFlag, int TurnFlag){
 	auto image = CheckGetSprite(GrHandle);
 	if (image == nullptr)return -1;
+	if (image->isDivedGraph){
+		Rect rect = image->DivedRect;
+		image = image->DivedBaseDxSprite;
+		image->setTextureRect(rect);
+	}
+	else {
+		auto size = textureCache->textureForKey(image->FileName)->getContentSize();
+		image->setTextureRect(Rect(0,0,size.width,size.height));
+	}
 	auto size = image->getContentSize();
 	if (Angle == 0 && cx == 0 && cy == 0){
 		//単純な描画の時は、単純計算でカリングする。
@@ -292,8 +301,6 @@ int CCDxLib::DrawRotaGraph3(int x, int y, int cx, int cy, double ExtRateX, doubl
 		if (x + size.width * ExtRateX < 0 || y + size.height * ExtRateY < 0) return 0;
 	}
 
-
-	//image->setTextureRect(Rect(0,0,size.width,size.height));
 	image->setPosition(DxVec2(x, y));
 	image->setAnchorPoint(Vec2((float)(cx) / size.width, (float)(size.height - cy) / size.height));
 	image->setScale(ExtRateX,ExtRateY);
@@ -305,7 +312,6 @@ int CCDxLib::DrawRotaGraph3(int x, int y, int cx, int cy, double ExtRateX, doubl
 int CCDxLib::DrawRectGraph(int DestX, int DestY, int SrcX, int SrcY, int Width, int Height, int GrHandle, int TransFlag, int TurnFlag){
 	auto image = CheckGetSprite(GrHandle);
 	if (image == nullptr)return -1;
-	auto size = image->getContentSize();
 	if (image->isDivedGraph){
 		Rect rect = image->DivedRect;
 		Rect rect2 = Rect(
@@ -313,10 +319,12 @@ int CCDxLib::DrawRectGraph(int DestX, int DestY, int SrcX, int SrcY, int Width, 
 			SrcY + rect.origin.y,
 			SrcX + Width > rect.size.width ? rect.size.width - SrcX : Width,
 			SrcY + Height >rect.size.height ? rect.size.height - SrcY : Height);
+		image = image->DivedBaseDxSprite;
 		image->setTextureRect(rect2);
 	}else 
 		image->setTextureRect(Rect(SrcX, SrcY, Width, Height));
-	image->setPosition(DxVec2(DestX,DestY));
+	auto size = image->getContentSize();
+	image->setPosition(DxVec2(DestX, DestY));
 	image->setAnchorPoint(Vec2::ANCHOR_TOP_LEFT);
 	image->setScale(1,1);
 	image->setRotation(0);
@@ -336,6 +344,7 @@ int CCDxLib::DrawLine(int x1, int y1, int x2, int y2, unsigned int Color){
 }
 int CCDxLib::DrawBox(int x1, int y1, int x2, int y2, unsigned int Color, int FillFlag){
 	int  _x1 = x1,_y1 = y1,  _x2 = x2 - 1, _y2 = y2 - 1;
+	if (x2 < 0 || y2 < 0 || x1 > visibleSize.width || y1 >visibleSize.height)return 0;
 	if (FillFlag == FALSE)
 		drawNode->drawRect(DxVec2(_x1, _y1), DxVec2(_x2, _y2), DxColor(Color));
 	else
