@@ -91,21 +91,6 @@ private:
 			return Texture2D::initWithString(text, textDefinition);
 		}
 	};
-	class SpritePOOL : public Sprite {
-	public://For DISARROW 
-		SpritePOOL() :Sprite(){};
-		SpritePOOL(const SpritePOOL &){};
-		SpritePOOL &operator =(const SpritePOOL &){ return *this; };
-	};
-	struct DivGraphic{
-		//-2から始まるマイナスのハンドルを使用します。
-		std::string FileName;
-		Rect rect;
-		DivGraphic(std::string FileName, Rect _rect){
-			this->FileName = FileName;
-			rect = Rect(_rect);
-		}
-	};
 	class ImagePOOL : public Image {
 	public://For DISARROW 
 		ImagePOOL() :Image(){};
@@ -170,7 +155,13 @@ private:
 	//Label* label2;
 
 public:
-	//Should fclose or release? ~CCDxLib(){	}
+	//Should fclose or release?
+	~CCDxLib(){
+		for (auto& ds : DxSprites)free(ds) ;
+		DxSprites.clear();
+		for (auto& ds : textDxSprites)free(ds);
+		textDxSprites.clear();
+	}
 	static Scene* createScene(AppDelegate * app);
 	virtual bool init();
 	void update(float delta);
@@ -210,24 +201,55 @@ private:
 		Color3B color = FromUnsignedIntColor(icolor);
 		return FromColor3B(color.r,color.g,color.b);
 	}
-	inline int GetGraphSizeX(int GrHandle){return Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle])->getContentSize().width; }
-	inline int GetGraphSizeY(int GrHandle){ return Director::getInstance()->getTextureCache()->getTextureForKey(GraphicHandles[GrHandle])->getContentSize().height; }
+	int GetGraphSizeX(int GrHandle){
+		int w, h;
+		GetGraphSize(GrHandle,&w,&h);
+		return w;
+	}
+	int GetGraphSizeY(int GrHandle){
+		int w, h;
+		GetGraphSize(GrHandle, &w, &h);
+		return h;
+	}
+	class DxSprite : public Sprite {
+	private:
+		std::vector<QuadCommand*> _quadCommands;
+	public:
+		virtual void draw(Renderer *renderer, const Mat4 &transform, uint32_t flags) override{
+			QuadCommand* quadCmd = new QuadCommand;
+			quadCmd->init(_globalZOrder, _texture->getName(), getGLProgramState(), _blendFunc, &_quad, 1, transform);
+			_quadCommands.push_back(quadCmd);
+			renderer->addCommand(quadCmd);
+		}
+		std::string FileName;
 		
-	std::vector<SpritePOOL> SpritePool;
-	int sppindex = 0;
-	std::vector<SpritePOOL> textSpritePool;
+		bool isDivedGraph = false;
+		Rect DivedRect;
+		DxSprite* DivedBaseDxSprite;
+
+		DxSprite() :Sprite(){};
+		DxSprite(const DxSprite &){};
+		~DxSprite() {
+			for (auto& s : _quadCommands) free(s);
+			_quadCommands.clear();
+		};
+		DxSprite &operator =(const DxSprite &){ return *this; };
+	};
+
+	
+	std::vector<DxSprite*> DxSprites;
+	std::vector<DxSprite*> textDxSprites;
 	int txtsppindex = 0;
 	TextTexture2DCache textTextureCacheVec[TextTexture2DCache::textTextureCacheSize];
 	std::unordered_multimap <std::string, TextTexture2DCache *> textTextureCache;	
 
+
 	void InitMembers();
-	Sprite* CheckGetSprite(int GrHandle);
+	DxSprite* CheckGetSprite(int GrHandle);
 	bool CheckMusicHandle(int index);
 	int KeyMap(cocos2d::EventKeyboard::KeyCode KeyCode);
 	int KeyReverseMap(int Key);
 	std::string KeyName(cocos2d::EventKeyboard::KeyCode KeyCode);
-	std::vector<std::string> GraphicHandles;
-	std::vector<DivGraphic> DivGrapichHandles;
 	std::vector<ImagePOOL> SoftImageHandles;
 	std::vector <MusicHandle> MusicHandles;
 	std::string CurrentPlayedBGMName;
