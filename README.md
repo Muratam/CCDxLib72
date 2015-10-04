@@ -84,10 +84,10 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 
 ##ヘルプ
 - Midi,BMPの拡張子は対応していないかもしれません。mp3やpng,jpegを使用してください。
-- リリースビルドをすると速くなる可能性があります。'cocos compile -p android -m release'のコマンドとかを使いましょう。
+- リリースビルドをすると速くなる可能性があります。`cocos compile -p android -m release`のコマンドとかを使いましょう。
 - LoadSoftImageは一度に一回までです！注意してください！
 - ソースコード中に日本語をいれている場合、そのソースコードがUTF-8でないと文字化けします。UTF-8で保存してください。
-- Visual Studio では、文頭に '#pragma execution_character_set("utf-8")'を宣言すればUTF-8を使用できます。
+- Visual Studio では、文頭に `#pragma execution_character_set("utf-8")`を宣言すればUTF-8を使用できます。
 - cocos2dx v3.8で作成しています。バージョンアップで動かなくなることもあるかもしれないので、v3.8を推奨します。
 - 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です。
 - cocosにあるファイル名と重複しないように注意しましょう。特にMain.cppなどはすでに存在します。
@@ -101,15 +101,16 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
   このライブラリを利用するにはcocos2dx v3.8を利用してください。  
 
 2. cocos のプロジェクトを作成する。
-	- ' cocos new -p com.samplegame -l cpp samplegame ' (AndroidのNDKやSDKのパスをセットしていれば、Eclipseを利用しなくて大丈夫です。)
+	- ` cocos new -p com.samplegame -l cpp samplegame ` (AndroidのNDKやSDKのパスをセットしていれば、Eclipseを利用しなくて大丈夫です。)
 	- Classesフォルダにコードを追加
 	- Resourcesに画像や音楽ファイルを追加 (仮想ボタンとして使うButtonExample.pngもここに)
 	- ClassesフォルダにいれたコードをAndroidで読み込む設定をします。proj.android のjniのAndroid.mkで  
-
+    
 	LOCAL_SRC_FILES := hellocpp/main.cpp \
 	                  ../../Classes/AppDelegate.cpp \
 	                   ../../Classes/HelloWorldScene.cpp
-
+    
+    
 を  
 
 	  FILE_LIST := $(wildcard $(LOCAL_PATH)/../../Classes/*.cpp)
@@ -163,7 +164,7 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 に変更したら準備完了です！
 
 4. コンパイルします
-  ' cocos compile -p android '
+  ` cocos compile -p android `
 
 5. これであなたのDxLibで書いたコードがAndroidでも動きます！
 
