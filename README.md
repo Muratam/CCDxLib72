@@ -110,13 +110,13 @@ LOCAL_SRC_FILES := hellocpp/main.cpp \
                  ../../Classes/AppDelegate.cpp \
                   ../../Classes/HelloWorldScene.cpp
 ~~~~    
-	を  
+  を  
 ~~~~
 FILE_LIST := $(wildcard $(LOCAL_PATH)/../../Classes/*.cpp)
 LOCAL_SRC_FILES := hellocpp/main.cpp
 LOCAL_SRC_FILES += $(FILE_LIST:$(LOCAL_PATH)/%=%)                   
 ~~~~
-	へ、変更してください。
+  へ、変更してください。
 
 
 - コードを少しリファクタリング  
@@ -177,9 +177,8 @@ proj.androidの
 
 
 
-
+##実装は可能なのでまた今度ので実装する予定の関数リスト
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-実装は可能なのでまた今度ので実装する予定の関数リスト
 memo
 #fontの種類変更したいなあ
 #画面端をどうする…？
