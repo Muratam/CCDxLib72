@@ -105,17 +105,22 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 	- Classesフォルダにコードを追加
 	- Resourcesに画像や音楽ファイルを追加 (仮想ボタンとして使うButtonExample.pngもここに)
 	- ClassesフォルダにいれたコードをAndroidで読み込む設定をします。proj.android のjniのAndroid.mkで  
+
 	LOCAL_SRC_FILES := hellocpp/main.cpp \
 	                  ../../Classes/AppDelegate.cpp \
 	                   ../../Classes/HelloWorldScene.cpp
+
 を  
+
 	  FILE_LIST := $(wildcard $(LOCAL_PATH)/../../Classes/*.cpp)
 	  LOCAL_SRC_FILES := hellocpp/main.cpp
 	  LOCAL_SRC_FILES += $(FILE_LIST:$(LOCAL_PATH)/%=%)                   
+
 へ、変更してください。
 
 
 3. コードを少しリファクタリング  
+    
     int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
     	
     	SetWindowSize(800 , 600 );
@@ -134,6 +139,7 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
     } 
 
 というロジックのコードを  
+    
     void AppDelegate::CCDxInit(){
     	SetGraphMode(WINDOW_WIDTH , WINDOW_HEIGHT);
     	ChangeWindowMode(TRUE);           
@@ -157,14 +163,16 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 に変更したら準備完了です！
 
 4. コンパイルします
-  'cocos compile -p android '
+  ' cocos compile -p android '
 
 5. これであなたのDxLibで書いたコードがAndroidでも動きます！
 
 6. 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！
+    
     proj.androidの
       build.xml の二行目 project name = ""
       AndroidManufest.xml の三行目 package= ""
+      
 を com.hogehoge みたいに変えましょう
 
 
