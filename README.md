@@ -1,14 +1,16 @@
 # CCDxLib72
 Cocos2dxで動くDxLibのラッパーライブラリだよ！  
-Classesの中身を自分のCocos2dxのClassesの中身に追加して使ってね！
+Classesの中身を自分のCocos2dxのClassesの中身に追加して使ってね！  
+ButtonExample.png は、Resourcesの中に入れてね！
 
 ##概要
-DxLibの関数をCocos2d-xで動かすライブラリCCDxlibです  
+DxLibの関数をCocos2d-xで動かすライブラリCCDxlib72です  
 Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなどに移植出来るライブラリです  
 導入の仕方については HowTo.txtを参考にしてください。  
 
-##CCDxLibで実装した関数一覧
-一部のマイナー関数を除いて殆どの関数を実装しています。2015/10/4 03:17現在 72個  
+##CCDxLib72で実装した関数一覧
+一部のマイナー関数を除いて殆どの関数を実装しています。  
+2015/10/4 03:17現在 72個    
 - ウインドウ関係(6)
 	- SetGraphMode,ChangeWindowMode,SetMainWindowText,GetScreenState SetDrawArea ClearDrawScreen
 - 画像描画関係(14)
@@ -24,12 +26,12 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 - CPUに読み込んで画像を扱う系の関数(10)
 	- LoadSoftImage GetSoftImageSize GetPixelSoftImage DeleteSoftImage InitSoftImage DrawSoftImage DrawPixelSoftImage MakeARGB8ColorSoftImage MakeXRGB8ColorSoftImage FillSoftImage
 - アプリのファイルの読み込み関数(10)
-	- FileRead_open FileRead_size FileRead_close FileRead_tell FileRead_seek FileRead_read FileRead_eof FileRead_gets FileRead_getc FileRead_scanf	
+	- FileRead_open FileRead_size FileRead_close FileRead_tell FileRead_seek FileRead_read FileRead_eof FileRead_gets FileRead_getc FileRead_scanf
 - 音利用関数(7)
 	- SetCreateSoundDataType LoadSoundMem,PlaySoundMem,CheckSoundMem StopSoundMem,DeleteSoundMem,InitSoundMem	
 
 - 追記
-	- 加えて、CCDxLibの描画は専用のTextureRendererに描画しているだけなので、ui::Buttonなど、好きにthis->addChild()することで、Cocos2dxの機能を利用することも可能です。  
+	- 加えて、CCDxLib72の描画は専用のTextureRendererに描画しているだけなので、ui::Buttonなど、好きにthis->addChild()することで、Cocos2dxの機能を利用することも可能です。  
 	- 一部のマルチプラットフォームに対応するための後述の関数を除いて本家と同じように動かすことが出来ます。
 
 ##仕様
@@ -92,11 +94,89 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 - UserDatafopenではフォルダは作成できません。注意してください
 - UserDatafopenはCCDxLib72の関数なので、init後にしか使用できないことに注意してください
 
+
+##CCDxLib72を利用してAndroidビルドする方法
+1. 入門サイトを見ながらcocosを入れる  
+  http://wiki.xsqi.net/index.php?%A5%D7%A5%ED%A5%B0%A5%E9%A5%E0%2FCocos2d-x%2FCocos2d-x%B3%AB%C8%AF%B4%C4%B6%AD%A4%CE%B9%BD%C3%DB  
+  このライブラリを利用するにはcocos2dx v3.8を利用してください。  
+
+2. cocos のプロジェクトを作成する。
+	- 'cocos new -p com.samplegame -l cpp samplegame' (AndroidのNDKやSDKのパスをセットしていれば、Eclipseを利用しなくて大丈夫です。)
+	- Classesフォルダにコードを追加
+	- Resourcesに画像や音楽ファイルを追加 (仮想ボタンとして使うButtonExample.pngもここに)
+	- ClassesフォルダにいれたコードをAndroidで読み込む設定をします。proj.android のjniのAndroid.mkで  
+	LOCAL_SRC_FILES := hellocpp/main.cpp \
+	                  ../../Classes/AppDelegate.cpp \
+	                   ../../Classes/HelloWorldScene.cpp
+を  
+	  FILE_LIST := $(wildcard $(LOCAL_PATH)/../../Classes/*.cpp)
+	  LOCAL_SRC_FILES := hellocpp/main.cpp
+	  LOCAL_SRC_FILES += $(FILE_LIST:$(LOCAL_PATH)/%=%)                   
+へ、変更してください。
+
+
+3. コードを少しリファクタリング
+    int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
+    	
+    	SetWindowSize(800 , 600 );
+    	ChangeWindowMode(TRUE);
+    	DxLib_Init();
+    	SetDrawScreen( DX_SCREEN_BACK );
+    	
+    	Awake();
+    	
+    	while( ScreenFlip()==0 && ProcessMessage()==0 && ClearDrawScreen()==0 ){
+    		GameLoop();
+    	}
+    	
+    	DxLib_End();
+    	return 0;
+    } 
+
+というロジックのコードを
+    void AppDelegate::CCDxInit(){
+    	SetGraphMode(WINDOW_WIDTH , WINDOW_HEIGHT);
+    	ChangeWindowMode(TRUE);           
+    	//タッチ操作でマウスの関数を反応できるように  
+    	EMULATE_TOUCH_BY_MOUSEFUNCTIONS();
+    }
+
+    void CCDxStart(){
+    	Awake();
+    	//使用する仮想ボタンはここで宣言する
+    	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_LEFT);
+    	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_Z);
+    }
+
+    void CCDxLoop(float deltaTime){
+    	ClearDrawScreen();
+    	GameLoop();
+    	if (CheckHitKey(KEY_INPUT_ESCAPE))DxLib_End();
+    }
+
+に変更したら準備完了です！
+
+4. コンパイルします
+  'cocos compile -p android '
+
+5. これであなたのDxLibで書いたコードがAndroidでも動きます！
+
+6. 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！
+    proj.androidの
+      build.xml の二行目 project name = ""
+      AndroidManufest.xml の三行目 package= ""
+を com.hogehoge みたいに変えましょう
+
+
+
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 実装は可能なのでまた今度ので実装する予定の関数リスト
 memo
 #fontの種類変更したいなあ
 #画面端をどうする…？
+#TopPositionFlag
+
 
 ・EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER ()
 ・ChangeFont （なぜかうまく動かない…）
@@ -138,7 +218,7 @@ memo
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-##CCDxLibで実装していない関数一覧
+##CCDxLib72で実装していない関数一覧
 - (実装してくれる方を募集しています！！！！)
 - 3D音楽関数,３D関数
 - CPUで扱うイメージのパレット系関数
