@@ -71,4 +71,3 @@ CCDxLib72を利用してAndroidビルドする方法
     build.xml の二行目 project name = ""
     AndroidManufest.xml の三行目 package= ""
   を com.hogehoge みたいに変えましょう
-  表示名を変えるには、.project の 三行目を<name>を変えましょう
