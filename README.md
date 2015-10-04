@@ -12,23 +12,23 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 一部のマイナー関数を除いて殆どの関数を実装しています。  
 2015/10/4 03:17現在 72個    
 - ウインドウ関係(6)
-	- SetGraphMode,ChangeWindowMode,SetMainWindowText,GetScreenState SetDrawArea ClearDrawScreen
+	- ` SetGraphMode,ChangeWindowMode,SetMainWindowText,GetScreenState SetDrawArea ClearDrawScreen `
 - 画像描画関係(14)
-	- LoadGraphScreen,LoadGraph,InitGraph,DeleteGraph DrawGraph,DrawTurnGraph,DrawExtendGraph,DrawRotaGraph DrawRotaGraph2,DrawRotaGraph3,DrawRectGraph,GetGraphSize DerivationGraph LoadDivGraph
+	- ` LoadGraphScreen,LoadGraph,InitGraph,DeleteGraph DrawGraph,DrawTurnGraph,DrawExtendGraph,DrawRotaGraph DrawRotaGraph2,DrawRotaGraph3,DrawRectGraph,GetGraphSize DerivationGraph LoadDivGraph `
 - 図形描画関係(8)
-	- GetColor,DrawLine,DrawBox,DrawCircle,DrawOval,DrawTriangle,DrawPixel,GetPixel
+	- ` GetColor,DrawLine,DrawBox,DrawCircle,DrawOval,DrawTriangle,DrawPixel,GetPixel `
 - 文字描画関係(3)
-	- DrawString,DrawFormatString ,SetFontSize
+	- ` DrawString,DrawFormatString ,SetFontSize `
 - 時間計測/乱数(5)
-	- GetNowCount GetNowHiPerformanceCount GetDateTime GetRand SRand
+	- ` GetNowCount GetNowHiPerformanceCount GetDateTime GetRand SRand `
 - ユーザーの入力操作関係(9)
-	- CheckHitKeyAll CheckHitKey GetHitKeyStateAll SetMouseDispFlag GetMousePoint GetMouseInput GetMouseWheelRotVol GetTouchInputNum GetTouchInput	
+	- ` CheckHitKeyAll CheckHitKey GetHitKeyStateAll SetMouseDispFlag GetMousePoint GetMouseInput GetMouseWheelRotVol GetTouchInputNum GetTouchInput `
 - CPUに読み込んで画像を扱う系の関数(10)
-	- LoadSoftImage GetSoftImageSize GetPixelSoftImage DeleteSoftImage InitSoftImage DrawSoftImage DrawPixelSoftImage MakeARGB8ColorSoftImage MakeXRGB8ColorSoftImage FillSoftImage
+	- ` LoadSoftImage GetSoftImageSize GetPixelSoftImage DeleteSoftImage InitSoftImage DrawSoftImage DrawPixelSoftImage MakeARGB8ColorSoftImage MakeXRGB8ColorSoftImage FillSoftImage `
 - アプリのファイルの読み込み関数(10)
-	- FileRead_open FileRead_size FileRead_close FileRead_tell FileRead_seek FileRead_read FileRead_eof FileRead_gets FileRead_getc FileRead_scanf
+	- ` FileRead_open FileRead_size FileRead_close FileRead_tell FileRead_seek FileRead_read FileRead_eof FileRead_gets FileRead_getc FileRead_scanf `
 - 音利用関数(7)
-	- SetCreateSoundDataType LoadSoundMem,PlaySoundMem,CheckSoundMem StopSoundMem,DeleteSoundMem,InitSoundMem	
+	- ` SetCreateSoundDataType LoadSoundMem,PlaySoundMem,CheckSoundMem StopSoundMem,DeleteSoundMem,InitSoundMem	`
 
 - 追記
 	- 加えて、CCDxLib72の描画は専用のTextureRendererに描画しているだけなので、ui::Buttonなど、好きにthis->addChild()することで、Cocos2dxの機能を利用することも可能です。  
@@ -37,43 +37,43 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 ##仕様
 マルチプラットフォーム対応のため、呼び出す関数が少し変化しています。  
 ###ゲームの開始・終了の関数
-- DxLib_Init ProcessMessage ScreenFlip SetDrawScreen(DX_SCREEN_BACK) DxLib_End SetTransColorを呼ぶ必要はありません。代わりに下記の関数を使用してください。
-	- AppDelegate::Dx72Init()
+- ` DxLib_Init ProcessMessage ScreenFlip SetDrawScreen(DX_SCREEN_BACK) DxLib_End SetTransColor ` を呼ぶ必要はありません。代わりに下記の関数を使用してください。
+	- ` AppDelegate::Dx72Init() `
 		- DxLib_init()を呼ぶ前に設定する関数類はここで呼び出して下さい。
-	- Dx72Start
+	- ` Dx72Start `
 		- DxLib_init()をした後の状態で、ゲーム開始時に一回だけ呼ばれます。
 		- 通常は初期設定(ファイルの読み込みなど)をここで行います。
-	- Dx72Loop
+	- ` Dx72Loop `
 		- ゲームのループです。毎フレームこの関数が呼び出されます。
 		- この関数を抜けたあと毎回DxLibで言うところのProcessMessage()やcreenFlip() が呼び出されます。
-	- DxLib_End 
+	- ` DxLib_End `
 		- 仕様を変更しました。
 		- DxLibの利用を終了する関数ではなく、ゲームループ(Dx72Loop)を終了して、
 		- ゲームを終了する関数として使用してください。
-	- SetTransColor
+	- ` SetTransColor ` 
 		- 透過色を指定したりはしないので、透過PNGを利用してください。
 		- http://www.gigafree.net/tool/retouch/ToukaPNG.html
 		- http://toktakaomi.hatenablog.com/entry/2015/02/24/004729
 		- このようなソフトウェアで透過PNGをちゃちゃっと作成してください。
              
 ###マルチプラットフォーム用のファイル入出力の関数
-- FileRead_ooooの関数
+- ` FileRead_ooooの関数 `
 	- 標準のfopenでは、スマホアプリが圧縮されている関係でファイルをそのまま読み書きすることができません。そこで、このFileRead_~~の名前のある関数を使います。
 	- この関数を使用することで、(Resourcesにいれてあった)同梱のファイルを読み込むことができるようになります。
-- UserDatafopen
+- ` UserDatafopen `
 	- fopenはスマホアプリの保存場所の関係で上手く動かないですので、永続させたいデータを保存したい場合、これを利用してください。
 	- 使い方は普通のfopenと同じです。
 	- UserDatafopenで開いた以降は通常通りにfwrite,freadやfseek fcloseなどをそのまま使用できます。
-- getUserDataPath()
+- ` getUserDataPath() `
 	- UserDatafopenで扱う読み書き可能なファイルがある場所を返します。
 	- exeファイルのすぐ近くとかではないので注意してください。
 	- またこれを使って得たパスには標準入出力関数、(例えばifstream) とかも使用出来ます。
 
 ###マルチプラットフォーム用の新規エミュレート関数
-- EMULATE_TOUCH_BY_MOUSEFUNCTIONS() 
+- ` EMULATE_TOUCH_BY_MOUSEFUNCTIONS() `
 	- マウス操作関数を呼び出してタッチ操作を使えます。
 	- スマホでも(タッチ操作関数だけでなく)マウス操作関数で動かすことが出来ます。
-- EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON()
+- ` EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON() `
 	- 仮想的にボタンを作成し、キーボード操作をエミュレート出来ます。
 	- CheckHitKeyなどの入力関数をエミュレートできます。
 	- 第一引数：KEY_INPUT_A ~ KEY_INPUT_Z などのエミュレートしたいKEY_INPUT_~~。
@@ -123,7 +123,7 @@ proj.android のjniのAndroid.mkで
 
 3. コードを少しリファクタリング  
 コードの最初を少し変更します  
-
+    
     int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
     	
     	SetWindowSize(800 , 600 );
@@ -171,7 +171,7 @@ proj.android のjniのAndroid.mkで
 5. これであなたのDxLibで書いたコードがAndroidでも動きます！
 
 6. 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！  
-  
+    
     proj.androidの
       build.xml の二行目 project name = ""
       AndroidManufest.xml の三行目 package= ""
