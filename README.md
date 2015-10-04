@@ -122,7 +122,7 @@ proj.android のjniのAndroid.mkで
 
 
 3. コードを少しリファクタリング  
-コードの最初を少し変更します
+コードの最初を少し変更します  
 
     int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
     	
@@ -170,8 +170,8 @@ proj.android のjniのAndroid.mkで
 
 5. これであなたのDxLibで書いたコードがAndroidでも動きます！
 
-6. 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！
-
+6. 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！  
+  
     proj.androidの
       build.xml の二行目 project name = ""
       AndroidManufest.xml の三行目 package= ""
