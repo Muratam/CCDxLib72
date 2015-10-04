@@ -101,7 +101,7 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
   このライブラリを利用するにはcocos2dx v3.8を利用してください。  
 
 2. cocos のプロジェクトを作成する。
-	- 'cocos new -p com.samplegame -l cpp samplegame' (AndroidのNDKやSDKのパスをセットしていれば、Eclipseを利用しなくて大丈夫です。)
+	- ' cocos new -p com.samplegame -l cpp samplegame ' (AndroidのNDKやSDKのパスをセットしていれば、Eclipseを利用しなくて大丈夫です。)
 	- Classesフォルダにコードを追加
 	- Resourcesに画像や音楽ファイルを追加 (仮想ボタンとして使うButtonExample.pngもここに)
 	- ClassesフォルダにいれたコードをAndroidで読み込む設定をします。proj.android のjniのAndroid.mkで  
@@ -115,7 +115,7 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 へ、変更してください。
 
 
-3. コードを少しリファクタリング
+3. コードを少しリファクタリング  
     int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
     	
     	SetWindowSize(800 , 600 );
@@ -133,7 +133,7 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
     	return 0;
     } 
 
-というロジックのコードを
+というロジックのコードを  
     void AppDelegate::CCDxInit(){
     	SetGraphMode(WINDOW_WIDTH , WINDOW_HEIGHT);
     	ChangeWindowMode(TRUE);           
