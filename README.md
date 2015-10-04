@@ -141,7 +141,7 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
   というロジックのコードを  
 ~~~~
 void AppDelegate::CCDxInit(){
-	SetGraphMode(WINDOW_WIDTH , WINDOW_HEIGHT);
+	SetGraphMode(800 , 600);
 	ChangeWindowMode(TRUE);           
 	//タッチ操作でマウスの関数を反応できるように  
 	EMULATE_TOUCH_BY_MOUSEFUNCTIONS();
