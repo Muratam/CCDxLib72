@@ -96,11 +96,11 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 
 
 ##CCDxLib72を利用してAndroidビルドする方法
-1. 入門サイトを見ながらcocosを入れる  
+- 入門サイトを見ながらcocosを入れる  
   http://wiki.xsqi.net/index.php?%A5%D7%A5%ED%A5%B0%A5%E9%A5%E0%2FCocos2d-x%2FCocos2d-x%B3%AB%C8%AF%B4%C4%B6%AD%A4%CE%B9%BD%C3%DB  
   このライブラリを利用するにはcocos2dx v3.8を利用してください。  
 
-2. cocos のプロジェクトを作成する。
+- cocos のプロジェクトを作成する。
 	- ` cocos new -p com.samplegame -l cpp samplegame ` (AndroidのNDKやSDKのパスをセットしていれば、Eclipseを利用しなくて大丈夫です。)
 	- Classesフォルダにコードを追加
 	- Resourcesに画像や音楽ファイルを追加 (仮想ボタンとして使うButtonExample.pngもここに)
@@ -121,7 +121,7 @@ proj.android のjniのAndroid.mkで
 へ、変更してください。
 
 
-3. コードを少しリファクタリング  
+- コードを少しリファクタリング  
 コードの最初を少し変更します  
     
     int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
@@ -165,12 +165,12 @@ proj.android のjniのAndroid.mkで
 
 に変更したら準備完了です！
 
-4. コンパイルします
+- コンパイルします
   ` cocos compile -p android `
 
-5. これであなたのDxLibで書いたコードがAndroidでも動きます！
+- これであなたのDxLibで書いたコードがAndroidでも動きます！
 
-6. 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！  
+- 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！  
     
     proj.androidの
       build.xml の二行目 project name = ""
