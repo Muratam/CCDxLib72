@@ -105,62 +105,61 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 	- Classesフォルダにコードを追加
 	- Resourcesに画像や音楽ファイルを追加 (仮想ボタンとして使うButtonExample.pngもここに)
 	- ClassesフォルダにいれたコードをAndroidで読み込む設定をします。proj.android のjniのAndroid.mkで  
-    
-		LOCAL_SRC_FILES := hellocpp/main.cpp \
-	                  ../../Classes/AppDelegate.cpp \
-	                   ../../Classes/HelloWorldScene.cpp
-    
-    
+~~~~    
+LOCAL_SRC_FILES := hellocpp/main.cpp \
+                 ../../Classes/AppDelegate.cpp \
+                  ../../Classes/HelloWorldScene.cpp
+~~~~    
 	を  
-
-		FILE_LIST := $(wildcard $(LOCAL_PATH)/../../Classes/*.cpp)
-		LOCAL_SRC_FILES := hellocpp/main.cpp
-		LOCAL_SRC_FILES += $(FILE_LIST:$(LOCAL_PATH)/%=%)                   
-
+~~~~
+FILE_LIST := $(wildcard $(LOCAL_PATH)/../../Classes/*.cpp)
+LOCAL_SRC_FILES := hellocpp/main.cpp
+LOCAL_SRC_FILES += $(FILE_LIST:$(LOCAL_PATH)/%=%)                   
+~~~~
 	へ、変更してください。
 
 
 - コードを少しリファクタリング  
-
-    int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
-    	
-    	SetWindowSize(800 , 600 );
-    	ChangeWindowMode(TRUE);
-    	DxLib_Init();
-    	SetDrawScreen( DX_SCREEN_BACK );
-    	
-    	Awake();
-    	
-    	while( ScreenFlip()==0 && ProcessMessage()==0 && ClearDrawScreen()==0 ){
-    		GameLoop();
-    	}
-    	
-    	DxLib_End();
-    	return 0;
-    } 
-
+~~~~
+int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
+	
+	SetWindowSize(800 , 600 );
+	ChangeWindowMode(TRUE);
+	DxLib_Init();
+	SetDrawScreen( DX_SCREEN_BACK );
+	
+	Awake();
+	
+	while( ScreenFlip()==0 && ProcessMessage()==0 && ClearDrawScreen()==0 ){
+		GameLoop();
+	}
+	
+	DxLib_End();
+	return 0;
+} 
+~~~~
   というロジックのコードを  
-    
-    void AppDelegate::CCDxInit(){
-    	SetGraphMode(WINDOW_WIDTH , WINDOW_HEIGHT);
-    	ChangeWindowMode(TRUE);           
-    	//タッチ操作でマウスの関数を反応できるように  
-    	EMULATE_TOUCH_BY_MOUSEFUNCTIONS();
-    }
+~~~~
+void AppDelegate::CCDxInit(){
+	SetGraphMode(WINDOW_WIDTH , WINDOW_HEIGHT);
+	ChangeWindowMode(TRUE);           
+	//タッチ操作でマウスの関数を反応できるように  
+	EMULATE_TOUCH_BY_MOUSEFUNCTIONS();
+}
 
-    void CCDxStart(){
-    	Awake();
-    	//使用する仮想ボタンはここで宣言する
-    	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_LEFT);
-    	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_Z);
-    }
+void CCDxStart(){
+	Awake();
+	//使用する仮想ボタンはここで宣言する
+	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_LEFT);
+	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_Z);
+}
 
-    void CCDxLoop(float deltaTime){
-    	ClearDrawScreen();
-    	GameLoop();
-    	if (CheckHitKey(KEY_INPUT_ESCAPE))DxLib_End();
-    }
-
+void CCDxLoop(float deltaTime){
+	ClearDrawScreen();
+	GameLoop();
+	if (CheckHitKey(KEY_INPUT_ESCAPE))DxLib_End();
+}
+~~~~
   に変更したら準備完了です！
 
 - コンパイルします。  
@@ -169,11 +168,11 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 - これであなたのDxLibで書いたコードがAndroidでも動きます！
 
 - 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！  
-    
-      proj.androidの
-        build.xml の二行目 project name = ""
-        AndroidManufest.xml の三行目 package= ""
-
+~~~~    
+proj.androidの
+    build.xml の二行目 project name = ""
+    AndroidManufest.xml の三行目 package= ""
+~~~~
   を com.hogehoge みたいに変えましょう
 
 
