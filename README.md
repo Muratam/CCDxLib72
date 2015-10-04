@@ -1,12 +1,12 @@
 # CCDxLib72
 Cocos2dxで動くDxLibのラッパーライブラリだよ！  
 Classesの中身を自分のCocos2dxのClassesの中身に追加して使ってね！  
-ButtonExample.png は、Resourcesの中に入れてね！
+同梱のButtonExample.png は、Resourcesの中に入れてね！
 
 ##概要
 DxLibの関数をCocos2d-xで動かすライブラリCCDxlib72です  
 Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなどに移植出来るライブラリです  
-導入の仕方については HowTo.txtを参考にしてください。  
+導入の仕方については 後の段落に記述してあります。  
 
 ##CCDxLib72で実装した関数一覧
 一部のマイナー関数を除いて殆どの関数を実装しています。  
@@ -45,7 +45,7 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 		- 通常は初期設定(ファイルの読み込みなど)をここで行います。
 	- ` Dx72Loop `
 		- ゲームのループです。毎フレームこの関数が呼び出されます。
-		- この関数を抜けたあと毎回DxLibで言うところのProcessMessage()やcreenFlip() が呼び出されます。
+		- この関数を抜けたあと毎回DxLibで言うところのProcessMessage()やScreenFlip() が呼び出されます。
 	- ` DxLib_End `
 		- 仕様を変更しました。
 		- DxLibの利用を終了する関数ではなく、ゲームループ(Dx72Loop)を終了して、
@@ -104,26 +104,24 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 	- ` cocos new -p com.samplegame -l cpp samplegame ` (AndroidのNDKやSDKのパスをセットしていれば、Eclipseを利用しなくて大丈夫です。)
 	- Classesフォルダにコードを追加
 	- Resourcesに画像や音楽ファイルを追加 (仮想ボタンとして使うButtonExample.pngもここに)
-	- ClassesフォルダにいれたコードをAndroidで読み込む設定をします。  
-proj.android のjniのAndroid.mkで  
+	- ClassesフォルダにいれたコードをAndroidで読み込む設定をします。proj.android のjniのAndroid.mkで  
     
-	LOCAL_SRC_FILES := hellocpp/main.cpp \
+		LOCAL_SRC_FILES := hellocpp/main.cpp \
 	                  ../../Classes/AppDelegate.cpp \
 	                   ../../Classes/HelloWorldScene.cpp
     
     
-を  
+	を  
 
-	  FILE_LIST := $(wildcard $(LOCAL_PATH)/../../Classes/*.cpp)
-	  LOCAL_SRC_FILES := hellocpp/main.cpp
-	  LOCAL_SRC_FILES += $(FILE_LIST:$(LOCAL_PATH)/%=%)                   
+		FILE_LIST := $(wildcard $(LOCAL_PATH)/../../Classes/*.cpp)
+		LOCAL_SRC_FILES := hellocpp/main.cpp
+		LOCAL_SRC_FILES += $(FILE_LIST:$(LOCAL_PATH)/%=%)                   
 
-へ、変更してください。
+	へ、変更してください。
 
 
 - コードを少しリファクタリング  
-コードの最初を少し変更します  
-    
+
     int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int){
     	
     	SetWindowSize(800 , 600 );
@@ -141,7 +139,7 @@ proj.android のjniのAndroid.mkで
     	return 0;
     } 
 
-というロジックのコードを  
+  というロジックのコードを  
     
     void AppDelegate::CCDxInit(){
     	SetGraphMode(WINDOW_WIDTH , WINDOW_HEIGHT);
@@ -163,20 +161,20 @@ proj.android のjniのAndroid.mkで
     	if (CheckHitKey(KEY_INPUT_ESCAPE))DxLib_End();
     }
 
-に変更したら準備完了です！
+  に変更したら準備完了です！
 
-- コンパイルします
+- コンパイルします。  
   ` cocos compile -p android `
 
 - これであなたのDxLibで書いたコードがAndroidでも動きます！
 
 - 一度作成してしまえば、プロジェクト名を変更すれば、他のアプリとしてビルド可能です！  
     
-    proj.androidの
-      build.xml の二行目 project name = ""
-      AndroidManufest.xml の三行目 package= ""
+      proj.androidの
+        build.xml の二行目 project name = ""
+        AndroidManufest.xml の三行目 package= ""
 
-を com.hogehoge みたいに変えましょう
+  を com.hogehoge みたいに変えましょう
 
 
 
