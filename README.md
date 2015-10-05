@@ -2,6 +2,8 @@
 Cocos2dxで動くDxLibのラッパーライブラリだよ！  
 Classesの中身を自分のCocos2dxのClassesの中身に追加して使ってね！  
 同梱のButtonExample.png は、Resourcesの中に入れてね！
+更新履歴：2015/10/08 RectGraph のバグ修正と描画の高速化
+
 
 ##概要
 DxLibの関数をCocos2d-xで動かすライブラリCCDxlib72です  
