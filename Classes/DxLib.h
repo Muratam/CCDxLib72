@@ -1,6 +1,10 @@
 #ifndef __CCDxLib_SCENE_H__
 #define __CCDxLib_SCENE_H__
 
+
+
+
+
 #include "cocos2d.h"
 #include "AppDelegate.h"
 #include "ui/CocosGUI.h"
@@ -161,6 +165,7 @@ public:
 		DxSprites.clear();
 		for (auto& ds : textDxSprites)free(ds);
 		textDxSprites.clear();
+		dxSpriteDirector.initQuadCommands();
 	}
 	static Scene* createScene(AppDelegate * app);
 	virtual bool init();
@@ -211,28 +216,73 @@ private:
 		GetGraphSize(GrHandle, &w, &h);
 		return h;
 	}
-	class DxSprite : public Sprite {
+
+	class DxSpriteDirector {
 	private:
 		std::vector<QuadCommand*> _quadCommands;
+		std::vector<V3F_C4B_T2F_Quad*> _quads;
+		BlendFunc _blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
+		GLProgramState* _glProgramState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP);
+		Director* _director;
+		int _quadindex = 0;
 	public:
-		virtual void draw(Renderer *renderer, const Mat4 &transform, uint32_t flags) override{
-			QuadCommand* quadCmd = new QuadCommand;
-			quadCmd->init(_globalZOrder, _texture->getName(), getGLProgramState(), _blendFunc, &_quad, 1, transform);
-			_quadCommands.push_back(quadCmd);
-			renderer->addCommand(quadCmd);
+		DxSpriteDirector(){
+			_director = Director::getInstance();
+		};
+
+		void initQuadCommands(){		
+			_quadindex = 0;
+
+			//’x‚¢Œ´ˆö‚Ípush_back‚Ì‚Æ‚±‚ë
+			/*
+			for (auto qc : _quadCommands)free(qc);
+			_quadCommands.clear();
+			for (auto q : _quads)free(q);
+			_quads.clear();			
+			*/
 		}
+
+		void DxDraw(GLuint TextureName,Mat4 transform, V3F_C4B_T2F_Quad quad){
+			
+			auto renderer = _director->getRenderer();
+			auto& parentTransform = _director->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
+			transform = transform * parentTransform;
+
+			QuadCommand* quadCmd ;
+			V3F_C4B_T2F_Quad* _quad ;
+
+			if (_quadindex >= _quads.size()){
+				quadCmd = new QuadCommand;
+				_quad = new V3F_C4B_T2F_Quad(quad);
+				_quadCommands.push_back(quadCmd);
+				_quads.push_back(_quad);
+			}else{
+				quadCmd = _quadCommands[_quadindex];
+				_quad = _quads[_quadindex];
+				_quad->bl = quad.bl;
+				_quad->br = quad.br;
+				_quad->tl = quad.tl;
+				_quad->tr = quad.tr;
+			}
+			_quadindex++;
+			quadCmd->init(0, TextureName, _glProgramState, _blendFunc, _quad, 1, transform);
+			renderer->addCommand(quadCmd);
+			
+		}
+	};
+	DxSpriteDirector dxSpriteDirector;
+
+	class DxSprite : public Sprite {
+	public:
+		V3F_C4B_T2F_Quad GetDxQuad(){ return _quad; }
+
 		std::string FileName;
-		
 		bool isDivedGraph = false;
 		Rect DivedRect;
-		DxSprite* DivedBaseDxSprite;
 
+		DxSprite* DivedBaseDxSprite;
 		DxSprite() :Sprite(){};
 		DxSprite(const DxSprite &){};
-		~DxSprite() {
-			for (auto& s : _quadCommands) free(s);
-			_quadCommands.clear();
-		};
 		DxSprite &operator =(const DxSprite &){ return *this; };
 	};
 

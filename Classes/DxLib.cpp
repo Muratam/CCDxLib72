@@ -164,6 +164,7 @@ int CCDxLib::ClearDrawScreen(){
 		drawNode->clear();
 		rendertexture->beginWithClear((float)SetBackGroundColorR / 255.0, (float)SetBackGroundColorG / 255.0, (float)SetBackGroundColorB / 255.0, 1.0);
 		txtsppindex = 0;
+		dxSpriteDirector.initQuadCommands();
 	}
 	RenderBegan = true;
 	RenderEnded = false;
@@ -173,7 +174,6 @@ int CCDxLib::SetBackgroundColor(int Red, int Green, int Blue){
 	SetBackGroundColorR = SetBackGroundColorR = Red;
 	SetBackGroundColorG = SetBackGroundColorG = Green;
 	SetBackGroundColorB = SetBackGroundColorB = Blue;
-
 	return 0;
 }
 int CCDxLib::LoadGraphScreen(int x, int y, char *GraphName, int TransFlag){
@@ -283,30 +283,34 @@ int CCDxLib::DrawRotaGraph2(int x, int y, int cx, int cy, double ExtRate, double
 	return DrawRotaGraph3(x,y,cx,cy,ExtRate,ExtRate,Angle,GrHandle,TransFlag,TurnFlag);
 }
 int CCDxLib::DrawRotaGraph3(int x, int y, int cx, int cy, double ExtRateX, double ExtRateY, double Angle, int GrHandle, int TransFlag, int TurnFlag){
+	
 	auto image = CheckGetSprite(GrHandle);
 	if (image == nullptr)return -1;
+	Size size;
+	
 	if (image->isDivedGraph){
 		Rect rect = image->DivedRect;
 		image = image->DivedBaseDxSprite;
+		size = image->getContentSize();
 		image->setTextureRect(rect);
-	}
-	else {
-		auto size = textureCache->textureForKey(image->FileName)->getContentSize();
+	}else {
+		size = image->getContentSize();
 		image->setTextureRect(Rect(0,0,size.width,size.height));
 	}
-	auto size = image->getContentSize();
 	if (Angle == 0 && cx == 0 && cy == 0){
 		//単純な描画の時は、単純計算でカリングする。
 		if (x > visibleSize.width || y > visibleSize.height) return 0;
 		if (x + size.width * ExtRateX < 0 || y + size.height * ExtRateY < 0) return 0;
 	}
-
+	
+	
 	image->setPosition(DxVec2(x, y));
 	image->setAnchorPoint(Vec2((float)(cx) / size.width, (float)(size.height - cy) / size.height));
 	image->setScale(ExtRateX,ExtRateY);
 	image->setRotation(FromRadian(Angle));
 	image->setFlippedX(TurnFlag == TRUE);
-	image->visit();
+	dxSpriteDirector.DxDraw(image->getTexture()->getName(), image->getNodeToWorldTransform(), image->getQuad());
+	
 	return 0;
 }
 int CCDxLib::DrawRectGraph(int DestX, int DestY, int SrcX, int SrcY, int Width, int Height, int GrHandle, int TransFlag, int TurnFlag){
@@ -329,7 +333,7 @@ int CCDxLib::DrawRectGraph(int DestX, int DestY, int SrcX, int SrcY, int Width, 
 	image->setScale(1,1);
 	image->setRotation(0);
 	image->setFlippedX(TurnFlag == TRUE);
-	image->visit();
+	dxSpriteDirector.DxDraw(image->getTexture()->getName(), image->getNodeToWorldTransform(), image->getQuad());
 	return 0;
 }
 

@@ -16,7 +16,7 @@ void AppDelegate::CCDxInit(){
 	ChangeWindowMode(TRUE);             //フルスクリーンにするか(TRUEなのでしない)
 	SetMainWindowText("CCDxLib72");     //
 	EMULATE_TOUCH_BY_MOUSEFUNCTIONS();  //タッチ操作でマウスの関数を反応できるように
-	SetBackgroundColor(200, 100, 255);  //画面の初期色の設定
+	SetBackgroundColor(0, 100, 255);  //画面の初期色の設定
 }
 
 //ファイルの読み込みなどの初期処理はここで行う。
@@ -50,6 +50,9 @@ void CCDxLoop(float deltaTime){
 	
 	//画像を描画したり、
 	DrawExtendGraph(0, 0, 840, 600, HWhandle);
+	for (int h = 0,i = 0; h < 4; h++)
+		for (int w = 0; w < 3; w++,i++)
+			DrawGraph(xx * 5 + 53 * w, yy * 5 + 33 * h, lh[i]);
 	
 	//音楽を再生したり
 	if (CheckHitKey(KEY_INPUT_A))PlaySoundMem(SHandle, DX_PLAYTYPE_BACK);
