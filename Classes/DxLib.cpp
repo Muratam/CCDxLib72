@@ -1434,6 +1434,64 @@ int CCDxLib::BltSoftImage(int SrcX, int SrcY, int SrcSizeX, int SrcSizeY, int Sr
 
 
 
+/*
+#define DX_BLENDMODE_NOBLEND    0//:ノーブレンド（デフォルト）
+#define DX_BLENDMODE_ALPHA      1//:αブレンド
+#define DX_BLENDMODE_ADD        2//:加算ブレンド
+#define DX_BLENDMODE_SUB        3//:減算ブレンド
+#define DX_BLENDMODE_MULA       4//:乗算ブレンド
+#define DX_BLENDMODE_INVSRC     5//:反転ブレンド
+#define DX_BLENDMODE_PMA_ALPHA  6//:乗算済みα用のαブレンド
+#define DX_BLENDMODE_PMA_ADD    7//:乗算済みα用の加算ブレンド
+#define DX_BLENDMODE_PMA_SUB    8//:乗算済みα用の減算ブレンド
+#define DX_BLENDMODE_PMA_INVSRC 9//:乗算済みα用の反転ブレンド
+
+//DrawString 
+int CCDxLib::SetDrawBlendMode(int BlendMode, int Pal){//0~255
+	//MUL Alpha Blend (It means that this is Opacity) 
+	BlendFunc _blendFunc  ;
+	int Opacity = -1;//Cocos : Opacity 255 is Normal 
+	switch (BlendMode){
+	case DX_BLENDMODE_NOBLEND    ://:ノーブレンド 
+		_blendFunc = { GL_ONE, GL_ONE_MINUS_SRC_COLOR }; break;
+	case DX_BLENDMODE_ALPHA      ://:αブレンド //Pal
+		_blendFunc = { GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA };
+		Opacity = Pal;break;
+	case DX_BLENDMODE_ADD        ://:加算ブレンド //Pal
+		_blendFunc = { GL_SRC_ALPHA, GL_ONE };
+		Opacity = Pal; break;
+	case DX_BLENDMODE_SUB        ://:減算ブレンド
+		_blendFunc = { GL_ZERO, GL_ONE_MINUS_SRC_COLOR }; break;
+	case DX_BLENDMODE_MULA       ://:乗算ブレンド
+		_blendFunc = { GL_ZERO, GL_SRC_COLOR }; break;
+	case DX_BLENDMODE_INVSRC     ://:反転ブレンド
+		//GL_ONE_MINUS_DST_COLOR
+		_blendFunc = {GL_ONE_MINUS_DST_COLOR , GL_ZERO }; break;
+	default:
+	case DX_BLENDMODE_PMA_ALPHA  ://:乗算済みα用のαブレンド(default)
+		_blendFunc = { GL_ONE, GL_ONE_MINUS_SRC_ALPHA };
+		Opacity = Pal; break;
+	case DX_BLENDMODE_PMA_ADD://:乗算済みα用の加算ブレンド
+		_blendFunc = { GL_ONE, GL_ONE};
+		Opacity = Pal; break;
+	case DX_BLENDMODE_PMA_SUB    ://:乗算済みα用の減算ブレンド
+		_blendFunc = { GL_ZERO, GL_ONE_MINUS_SRC_ALPHA }; break;
+	case DX_BLENDMODE_PMA_INVSRC ://:乗算済みα用の反転ブレンド
+		_blendFunc = { GL_ONE_MINUS_DST_COLOR, GL_ZERO }; break;
+	}
+	
+	drawNode->setBlendFunc(_blendFunc );
+	this->dxSpriteDirector._blendFunc = _blendFunc;
+	text->setBlendFunc(_blendFunc);
+	if (0 <= Opacity && Opacity <256){
+		Opacity = 255 - Opacity;
+		//GLProgram
+
+		drawNode->setOpacity(Opacity);
+		text->setOpacity(Opacity);
+
+	}
+}*/
 
 
 

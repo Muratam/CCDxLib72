@@ -2,7 +2,7 @@
 Cocos2dxで動くDxLibのラッパーライブラリだよ！  
 Classesの中身を自分のCocos2dxのClassesの中身に追加して使ってね！  
 同梱のButtonExample.png は、Resourcesの中に入れてね！  
-更新履歴：2015/10/08 RectGraph のバグ修正と描画の高速化
+更新履歴：2015/10/06 RectGraph のバグ修正と描画の高速化
 
 
 ##概要
@@ -85,7 +85,12 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 	- (注)ボタンの画像を読み込むので、CCDxInit()の中ではなく、CCDxStartで宣言してくださ
 
 ##ヘルプ
-- Midi,BMPの拡張子は対応していないかもしれません。mp3やpng,jpegを使用してください。
+- Mp3の効果音とBGMはきちんとわけましょう。
+  - BGMを読み込む前には SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMPRESS)
+  - SE を読み込む前には SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMNOPRESS)
+  - ということをしないと、うまくAndroidでは起動しない可能性があります。
+  - 目安として、10秒以上ならBGMではないでしょうか。
+- Midi,BMPの拡張子は対応していないです。mp3やpng,jpegを使用してください。
 - リリースビルドをすると速くなる可能性があります。`cocos compile -p android -m release`のコマンドとかを使いましょう。
 - LoadSoftImageは一度に一回までです！注意してください！
 - ソースコード中に日本語をいれている場合、そのソースコードがUTF-8でないと文字化けします。UTF-8で保存してください。
@@ -185,7 +190,7 @@ memo
 #fontの種類変更したいなあ
 #画面端をどうする…？
 #TopPositionFlag
-
+#oncaptureScreen may be good !!!
 
 ・EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER ()
 ・ChangeFont （なぜかうまく動かない…）
