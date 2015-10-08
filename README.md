@@ -97,7 +97,7 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 	- 第二引数：falseでボタンを画面から消せます。trueでボタンが現れます。
 
 
-##ヘルプ
+##Cocosへの移行に関するヘルプ
 - Mp3の効果音とBGMはきちんとわけましょう。
   - BGMを読み込む前には SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMPRESS)
   - SE を読み込む前には SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMNOPRESS)
