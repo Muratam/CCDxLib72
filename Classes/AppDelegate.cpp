@@ -58,8 +58,15 @@ bool AppDelegate::applicationDidFinishLaunching() {
 	auto scene = CCDxLib::createScene(this);
 	director->runWithScene(scene);
 	if (SetBackGroundColorR != -72 && SetBackGroundColorG != -72 && SetBackGroundColorB != -72)Get_m_dxlib()->SetBackgroundColor(SetBackGroundColorR, SetBackGroundColorG, SetBackGroundColorB);
-	Get_m_dxlib()->EMULATE_TOUCH_BY_MOUSEFUNCTIONS(BeforeDxInitEmulateTouchByMouseFunctions);
-	Get_m_dxlib()->EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(BeforeDxInitEmulateKeuBoardByAccelerometer );
+	if (BeforeDxInitEmulateTouchByMouseFunctions)
+		Get_m_dxlib()->EMULATE_TOUCH_BY_MOUSEFUNCTIONS(BeforeDxInitEmulateTouchByMouseFunctions);
+	if (BeforeDxInitEmulateKeyBoardArrowsBySwipe)
+		Get_m_dxlib()->EMULATE_KEYBOARD_ARROWS_BY_SWIPE(BeforeDxInitEmulateKeyBoardArrowsBySwipe);
+	if (BeforeDxInitEmulateKeyboardBySingleTouchEnabled)
+		Get_m_dxlib()->EMULATE_KEYBOARD_BY_SINGLETOUCH(BeforeDxInitEmulateKeyboardBySingleTouchKeyCode,true);
+	//if (BeforeDxInitEmulateKeuBoardByAccelerometer)
+	//	Get_m_dxlib()->EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(BeforeDxInitEmulateKeuBoardByAccelerometer );
+
 
 	return true;
 }
@@ -101,6 +108,14 @@ int AppDelegate::SetMainWindowText(char *WindowText){
 void AppDelegate::EMULATE_TOUCH_BY_MOUSEFUNCTIONS(bool Emulate){
 	BeforeDxInitEmulateTouchByMouseFunctions = Emulate;
 }
+void AppDelegate::EMULATE_KEYBOARD_ARROWS_BY_SWIPE(bool Emulate){
+	BeforeDxInitEmulateKeyBoardArrowsBySwipe = Emulate;
+}
+void AppDelegate::EMULATE_KEYBOARD_BY_SINGLETOUCH(int KeyCode, bool Emulate){
+	BeforeDxInitEmulateKeyboardBySingleTouchKeyCode = KeyCode;
+	BeforeDxInitEmulateKeyboardBySingleTouchEnabled = Emulate;
+}
+
 void AppDelegate::EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate){
 	BeforeDxInitEmulateKeuBoardByAccelerometer = Emulate;
 }

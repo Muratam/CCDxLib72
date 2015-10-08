@@ -2,7 +2,9 @@
 Cocos2dxで動くDxLibのラッパーライブラリだよ！  
 Classesの中身を自分のCocos2dxのClassesの中身に追加して使ってね！  
 同梱のButtonExample.png は、Resourcesの中に入れてね！  
-更新履歴：2015/10/06 RectGraph のバグ修正と描画の高速化
+更新履歴
+- 2015/10/06 RectGraph のバグ修正と描画の高速化
+- 2015/10/08 EMULATE拡張関数３種追加( ` EMULATE_KEYBOARD_ARROWS_BY_SWIPE EMULATE_KEYBOARD_BY_SINGLETOUCH SET_VISIBLE_IMAGINARY_BUTTON ` )
 
 
 ##概要
@@ -75,6 +77,11 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 - ` EMULATE_TOUCH_BY_MOUSEFUNCTIONS() `
 	- マウス操作関数を呼び出してタッチ操作を使えます。
 	- スマホでも(タッチ操作関数だけでなく)マウス操作関数で動かすことが出来ます。
+- ` EMULATE_KEYBOARD_ARROWS_BY_SWIPE() `
+	- スワイプ操作でキーボードの十字キーを操作できるようになります。
+- ` EMULATE_KEYBOARD_BY_SINGLETOUCH() `
+	- シングルタッチでキーボードの指定したボタンをエミュレートできます。
+	- 第一引数：KEY_INPUT_A ~ KEY_INPUT_Z などのエミュレートしたいKEY_INPUT_~~。
 - ` EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON() `
 	- 仮想的にボタンを作成し、キーボード操作をエミュレート出来ます。
 	- CheckHitKeyなどの入力関数をエミュレートできます。
@@ -83,6 +90,12 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 	- 第二引数：読み込むボタンの画像の名前(付属のボタンは"ButtonExample.png"です)
 	- 第三,四引数：ボタンの位置
 	- (注)ボタンの画像を読み込むので、CCDxInit()の中ではなく、CCDxStartで宣言してくださ
+- ` SET_VISIBLE_IMAGINARY_BUTTON() `
+	- 仮想的に作成したボタンを消したり現れたりできます。
+	- 仮想ボタンは使わない時は操作の邪魔になるので消しましょう。
+	- 第一引数：KEY_INPUT_A ~ KEY_INPUT_Z などのエミュレートしたいKEY_INPUT_~~。
+	- 第二引数：falseでボタンを画面から消せます。trueでボタンが現れます。
+
 
 ##ヘルプ
 - Mp3の効果音とBGMはきちんとわけましょう。

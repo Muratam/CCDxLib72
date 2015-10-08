@@ -328,8 +328,12 @@ private:
 	bool EmulateTouchByMouseFunctions = false;
 	int EmulateButtonNum = 0;
 	bool EmulateKeyBordArrowsByAccelerometer = false;
-	bool EmulateKeyBoardBySingleTouch = false;
 	int EmulateKeyBoardBySingleTouchKeyCode = 0;
+	bool EmulateKeyBoardArrowsBySwipe = false;
+	std::unordered_map<int, ui::Button*> ImaginaryButton;
+	int EmulateKeyboardBySingleTouchKeyCode = 0;
+	bool EmulateKeyboardBySingleTouchEnabled = false;
+
 #define USE_EMULATE_BUTTON_DEFAULT_POSITION -7272
 
 public:
@@ -390,7 +394,11 @@ public:
 	void EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode, char* ButtonFileName, int PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION, int PositionY = USE_EMULATE_BUTTON_DEFAULT_POSITION,bool WriteKeyName = false);
 	void EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode);
 	void EMULATE_KEYBOARD_ARROWS_BY_ACCELEROMETER(bool Emulate = true);
-
+	
+	void EMULATE_KEYBOARD_ARROWS_BY_SWIPE(bool Emulate = true);
+	void EMULATE_KEYBOARD_BY_SINGLETOUCH(int KeyCode,bool Emulate = true);
+	void SET_VISIBLE_IMAGINARY_BUTTON(int KeyCode,bool Visible);
+	
 	int LoadSoftImage(char *FileName);
 	int GetSoftImageSize(int SIHandle, int *Width, int *Height);
 	int GetPixelSoftImage(int SIHandle, int x, int y, int *r, int *g, int *b, int *a);
@@ -479,6 +487,10 @@ MKCCDxFN(int, GetTouchInput, (int InputNo, int *PositionX, int *PositionY, int *
 MKCCDxFN(void, EMULATE_TOUCH_BY_MOUSEFUNCTIONS, (bool Emulate = true), (Emulate))
 MKCCDxFN(void, EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON, (int KeyCode, char* ButtonFileName, int PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION, int PositionY = USE_EMULATE_BUTTON_DEFAULT_POSITION, bool WriteKeyName = false), (KeyCode, ButtonFileName, PositionX, PositionY, WriteKeyName))
 MKCCDxFN(void, EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON, (int KeyCode), (KeyCode))
+MKCCDxFN(void, EMULATE_KEYBOARD_ARROWS_BY_SWIPE, (bool Emulate = true), (Emulate))
+MKCCDxFN(void, EMULATE_KEYBOARD_BY_SINGLETOUCH, (int KeyCode, bool Emulate = true), (KeyCode, Emulate ))
+MKCCDxFN(void, SET_VISIBLE_IMAGINARY_BUTTON, (int KeyCode, bool Visible),(KeyCode, Visible))
+
 MKCCDxFN(int, LoadSoftImage, (char *FileName), (FileName))
 MKCCDxFN(int, GetSoftImageSize, (int SIHandle, int *Width, int *Height), (SIHandle, Width, Height))
 MKCCDxFN(int, GetPixelSoftImage, (int SIHandle, int x, int y, int *r, int *g, int *b, int *a), (SIHandle, x, y, r, g, b, a))

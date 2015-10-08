@@ -1021,9 +1021,12 @@ void CCDxLib::onTouchesBegan    (const std::vector<Touch*>& touches, Event *pEve
 		LastTouchX = t->getLocation().x;
 		LastTouchY = t->getLocation().y;
 	}
+	if (EmulateKeyboardBySingleTouchEnabled)
+		onKeyPressed((EventKeyboard::KeyCode) EmulateKeyboardBySingleTouchKeyCode, nullptr);
+	
 }
 void CCDxLib::onTouchesMoved    (const std::vector<Touch*>& touches, Event *pEvent){
-	int i = 0;
+	float SwipeHorizontal = 0,SwipeVertical = 0;
 	for (auto t : touches){
 		for (auto idxt = DxTouches.begin(); idxt != DxTouches.end();){
 			if ((*idxt).ID == t->getID()) {
@@ -1035,11 +1038,80 @@ void CCDxLib::onTouchesMoved    (const std::vector<Touch*>& touches, Event *pEve
 		}
 		LastTouchX = t->getLocation().x;
 		LastTouchY = t->getLocation().y;
+		if (EmulateKeyBoardArrowsBySwipe){
+			SwipeHorizontal += t->getDelta().x;
+			SwipeVertical += t->getDelta().y;
+		}
+	}
+	if (EmulateKeyBoardArrowsBySwipe){
+		//移動範囲の絶対値が閾値以上の時のみ新たな操作に変更する。
+		float SwipeThreshold = 0.01 * Vec2(visibleSize.width,visibleSize.height).length() ;
+		auto SwipeVec2 = Vec2(SwipeHorizontal,SwipeVertical);
+		if (SwipeVec2.length() > SwipeThreshold) {
+			float Angle = SwipeVec2.getAngle();
+			float PId8 = 0.125 * 3.14159265 ;
+			auto Press = [this](int keyCode) -> void{
+				this->onKeyPressed((EventKeyboard::KeyCode) keyCode, nullptr);};
+			auto Release = [this](int keyCode) -> void{
+				this->onKeyReleased((EventKeyboard::KeyCode) keyCode, nullptr);};
+
+			if (Angle > PId8 * 7){
+				Release(KEY_INPUT_UP);  Release(KEY_INPUT_RIGHT);
+				Press(KEY_INPUT_LEFT); Release(KEY_INPUT_DOWN);
+			}else if (Angle > PId8 * 5) {
+				Press(KEY_INPUT_UP);  Release(KEY_INPUT_RIGHT);
+				Press(KEY_INPUT_LEFT); Release(KEY_INPUT_DOWN);
+			}else if (Angle > PId8 * 3) {
+				Press(KEY_INPUT_UP);  Release(KEY_INPUT_RIGHT);
+				Release(KEY_INPUT_LEFT); Release(KEY_INPUT_DOWN);
+			}else if (Angle > PId8 * 1) {
+				Press(KEY_INPUT_UP);  Press(KEY_INPUT_RIGHT);
+				Release(KEY_INPUT_LEFT); Release(KEY_INPUT_DOWN);
+			}else if (Angle > PId8 * -1) {
+				Release(KEY_INPUT_UP);  Press(KEY_INPUT_RIGHT);
+				Release(KEY_INPUT_LEFT); Release(KEY_INPUT_DOWN);
+			}else if (Angle > PId8 * -3) {
+				Release(KEY_INPUT_UP);  Press(KEY_INPUT_RIGHT);
+				Release(KEY_INPUT_LEFT); Press(KEY_INPUT_DOWN);
+			}else if (Angle > PId8 * -5) {
+				Release(KEY_INPUT_UP);  Release(KEY_INPUT_RIGHT);
+				Release(KEY_INPUT_LEFT); Press(KEY_INPUT_DOWN);
+			}else if (Angle > PId8 * -7) {
+				Release(KEY_INPUT_UP);  Release(KEY_INPUT_RIGHT);
+				Press(KEY_INPUT_LEFT); Press(KEY_INPUT_DOWN);
+			} else{
+				Release(KEY_INPUT_UP);  Release(KEY_INPUT_RIGHT);
+				Press(KEY_INPUT_LEFT); Release(KEY_INPUT_DOWN);
+			}			
+		}
+
+		/*
+		float SwipeHThreshold = (float)visibleSize.width / 10;
+		float SwipeVThreshold = (float)visibleSize.height / 10;
+		float Allow = 1.0 / 0.72;
+		float DisAllow = 0.72;
+		float H = SwipeHorizontal / SwipeHThreshold;
+		float V = SwipeVertical / SwipeVThreshold;
+				
+		if (H >= Allow)	SwipeHorizontal = Allow*SwipeHThreshold;
+		if (H >= 1)	onKeyPressed((EventKeyboard::KeyCode) KEY_INPUT_RIGHT, nullptr);
+		if (H <= DisAllow)onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_RIGHT, nullptr);
+		if (H >= -DisAllow)onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_LEFT, nullptr);
+		if (H <= -1)onKeyPressed((EventKeyboard::KeyCode) KEY_INPUT_LEFT, nullptr);
+		if (H <= -Allow)SwipeHorizontal = -Allow*SwipeHThreshold;
+
+		if (V >= Allow)SwipeVertical = Allow *SwipeVThreshold;
+		if (V >= 1)onKeyPressed((EventKeyboard::KeyCode) KEY_INPUT_UP, nullptr);
+		if (V <= DisAllow)onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_UP, nullptr);
+		if (V >= -DisAllow)onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_DOWN, nullptr);
+		if (V <= -1)onKeyPressed((EventKeyboard::KeyCode) KEY_INPUT_DOWN, nullptr);
+		if (V <= -Allow)SwipeVertical = -Allow *SwipeVThreshold;
+		*/
 	}
 }
 void CCDxLib::onTouchesEnded    (const std::vector<Touch*>& touches, Event *pEvent){
 	for (auto t : touches){
-		for (auto idxt = DxTouches.begin();idxt !=DxTouches.end();){
+		for (auto idxt = DxTouches.begin(); idxt != DxTouches.end();){
 			if ((*idxt).ID == t->getID()) {
 				idxt = DxTouches.erase(idxt);
 				break;
@@ -1049,6 +1121,15 @@ void CCDxLib::onTouchesEnded    (const std::vector<Touch*>& touches, Event *pEve
 		LastTouchX = t->getLocation().x;
 		LastTouchY = t->getLocation().y;
 	}
+	if (EmulateKeyBoardArrowsBySwipe && DxTouches.size() == 0){
+		onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_LEFT, nullptr);
+		onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_RIGHT, nullptr);
+		onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_UP, nullptr);
+		onKeyReleased((EventKeyboard::KeyCode) KEY_INPUT_DOWN, nullptr);
+	}
+	if (EmulateKeyboardBySingleTouchEnabled)
+		onKeyReleased((EventKeyboard::KeyCode) EmulateKeyboardBySingleTouchKeyCode, nullptr);
+
 }
 void CCDxLib::onTouchesCancelled(const std::vector<Touch*>& touches, Event *pEvent){
 	this->onTouchesEnded(touches, pEvent);
@@ -1121,64 +1202,89 @@ void CCDxLib::EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode){
 }
 void CCDxLib::EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(int KeyCode, char* ButtonFileName, int PositionX, int PositionY, bool WriteKeyName){
 	
-	auto button = ui::Button::create(ButtonFileName, "");
-	button->addTouchEventListener([KeyCode,button](Ref* pSender, cocos2d::ui::Widget::TouchEventType type){
-		switch (type){
-		case ui::Widget::TouchEventType::BEGAN:
-			Get_m_dxlib()->EmulateButtonEnterCallback(KeyCode);
-			button->setOpacity(255);
-			break;
-		case ui::Widget::TouchEventType::ENDED:
-		case ui::Widget::TouchEventType::CANCELED:
-			Get_m_dxlib()->EmulateButtonExitCallback(KeyCode);
-			button->setOpacity(150);
-			break;		
+	if (ImaginaryButton.find(KeyCode) == ImaginaryButton.end()){
+		auto button = ui::Button::create(ButtonFileName, "");
+		button->addTouchEventListener([KeyCode, button](Ref* pSender, cocos2d::ui::Widget::TouchEventType type){
+			switch (type){
+			case ui::Widget::TouchEventType::BEGAN:
+				Get_m_dxlib()->EmulateButtonEnterCallback(KeyCode);
+				button->setOpacity(255);
+				break;
+			case ui::Widget::TouchEventType::ENDED:
+			case ui::Widget::TouchEventType::CANCELED:
+				Get_m_dxlib()->EmulateButtonExitCallback(KeyCode);
+				button->setOpacity(150);
+				break;
+			}
+		});
+		if (WriteKeyName){
+			auto width = button->getContentSize().width;
+			auto height = button->getContentSize().height;
+			button->setTitleText(KeyName((EventKeyboard::KeyCode)KeyCode));
+			button->setTitleColor(FromUnsignedIntColor(0));
+
+			int	FontSize = 0.8 *  height / KeyName((EventKeyboard::KeyCode)KeyCode).length();
+			button->setTitleFontSize(FontSize);
 		}
-	});
-	if (WriteKeyName){
-		auto width = button->getContentSize().width;
-		auto height = button->getContentSize().height;
-		button->setTitleText(KeyName((EventKeyboard::KeyCode)KeyCode));
-		button->setTitleColor(FromUnsignedIntColor(0));
-		
-		int	FontSize = 0.8 *  height / KeyName((EventKeyboard::KeyCode)KeyCode).length();
-	    button->setTitleFontSize(FontSize);
-	}
 
-	button->setOpacity(100);
-	if (PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION || PositionY == USE_EMULATE_BUTTON_DEFAULT_POSITION){
-		auto width = button->getContentSize().width;
-		auto height = button->getContentSize().height;
-		switch (KeyCode){
-		case KEY_INPUT_LEFT	:
-			PositionX = visibleSize.width -  width * 1.1 *3;
-			PositionY = visibleSize.height - height * 0.75;
-			break;
-		case KEY_INPUT_RIGHT:
-			PositionX = visibleSize.width -  width * 1.1 * 1;
-			PositionY = visibleSize.height - height * 0.75;
-			break;
-		case KEY_INPUT_UP:
-			PositionX = visibleSize.width -  width * 1.1 * 2;
-			PositionY = visibleSize.height - height * 0.75 - height * 1.1;
-			break;
-		case KEY_INPUT_DOWN:
-			PositionX = visibleSize.width -  width * 1.1 * 2;
-			PositionY = visibleSize.height - height * 0.75;
-			break;
-		default:
-			PositionX = width * 1.1 *(0.7 + EmulateButtonNum);
-			PositionY = visibleSize.height - height * 0.75;
-			EmulateButtonNum++;
-			break;
+		button->setOpacity(100);
+		if (PositionX = USE_EMULATE_BUTTON_DEFAULT_POSITION || PositionY == USE_EMULATE_BUTTON_DEFAULT_POSITION){
+			auto width = button->getContentSize().width;
+			auto height = button->getContentSize().height;
+			switch (KeyCode){
+			case KEY_INPUT_LEFT:
+				PositionX = visibleSize.width - width * 1.1 * 3;
+				PositionY = visibleSize.height - height * 0.75;
+				break;
+			case KEY_INPUT_RIGHT:
+				PositionX = visibleSize.width - width * 1.1 * 1;
+				PositionY = visibleSize.height - height * 0.75;
+				break;
+			case KEY_INPUT_UP:
+				PositionX = visibleSize.width - width * 1.1 * 2;
+				PositionY = visibleSize.height - height * 0.75 - height * 1.1;
+				break;
+			case KEY_INPUT_DOWN:
+				PositionX = visibleSize.width - width * 1.1 * 2;
+				PositionY = visibleSize.height - height * 0.75;
+				break;
+			default:
+				PositionX = width * 1.1 *(0.7 + EmulateButtonNum);
+				PositionY = visibleSize.height - height * 0.75;
+				EmulateButtonNum++;
+				break;
 
+			}
 		}
+		button->setPosition(DxVec2(PositionX, PositionY));
+		this->addChild(button);
+		ImaginaryButton[KeyCode] = button;
+	}else {
+		//ImaginaryButton.erase(KeyCode);
+		//EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KeyCode,ButtonFileName,PositionX,PositionY,WriteKeyName);
+		return;
 	}
-	button->setPosition(DxVec2(PositionX, PositionY));
-	this->addChild(button);
-	
-
 }
+void CCDxLib::SET_VISIBLE_IMAGINARY_BUTTON(int KeyCode, bool Visible){
+	if (ImaginaryButton.find(KeyCode) != ImaginaryButton.end()){
+		ImaginaryButton[KeyCode]->setVisible(Visible);
+		//ImaginaryButton[KeyCode]->setBright(false);
+	}
+}
+void CCDxLib::EMULATE_KEYBOARD_BY_SINGLETOUCH(int KeyCode, bool Emulate){
+	EmulateKeyboardBySingleTouchEnabled = Emulate;
+	EmulateKeyboardBySingleTouchKeyCode = KeyCode;
+}
+
+
+
+
+void CCDxLib::EMULATE_KEYBOARD_ARROWS_BY_SWIPE(bool Emulate){
+	EmulateKeyBoardArrowsBySwipe = Emulate;
+}
+
+
+
 
 int CCDxLib::LoadSoftImage(char *FileName){
 	ImagePOOL image;

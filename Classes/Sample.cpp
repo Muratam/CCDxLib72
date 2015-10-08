@@ -33,13 +33,14 @@ void CCDxStart(){
 	PlaySoundMem(MHandle,DX_PLAYTYPE_BACK);
 
 	//使用する仮想ボタンはここで宣言する
-	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_DOWN);
-	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_UP);
-	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_RIGHT);
-	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_LEFT);
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_T);
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_R);
 	EMULATE_KEYBOARD_BY_IMAGINARY_BUTTON(KEY_INPUT_A);
+	//スワイプ操作で十字キーを操作できるように
+	EMULATE_KEYBOARD_ARROWS_BY_SWIPE();
+	
+	//シングルタップが特定の一つのボタンに反応するように出来る
+	//EMULATE_KEYBOARD_BY_SINGLETOUCH(KEY_INPUT_P);
 }
 
 
@@ -66,7 +67,11 @@ void CCDxLoop(float deltaTime){
 	if (CheckHitKey(KEY_INPUT_UP))yy -= 1;
 	if (CheckHitKey(KEY_INPUT_R)) DrawRectGraph(xx, yy, 0, 0, 72, 72, HWhandle);
 	else DrawGraph(xx, yy, HWhandle);
+	
+	//作成した仮想ボタンを消すことも出来る
+	if (CheckHitKey(KEY_INPUT_P))SET_VISIBLE_IMAGINARY_BUTTON(KEY_INPUT_UP,false);
 
+	
 	//マウス操作をスマホならタッチで操作できる
 	int mx = 0, my = 0;
 	GetMousePoint(&mx, &my);
