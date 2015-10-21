@@ -405,7 +405,6 @@ public:
 	int DrawSoftImage(int x, int y, int SIHandle);
 	int DrawPixelSoftImage(int SIHandle, int x, int y, int r, int g, int b, int a);
 	int MakeARGB8ColorSoftImage(int SizeX, int SizeY);
-	int MakeXRGB8ColorSoftImage(int SizeX, int SizeY);
 	int FillSoftImage(int SIHandle, int r, int g, int b, int a);
 	int DeleteSoftImage(int SIHandle);
 	int InitSoftImage();
@@ -497,7 +496,6 @@ MKCCDxFN(int, GetPixelSoftImage, (int SIHandle, int x, int y, int *r, int *g, in
 MKCCDxFN(int, DrawSoftImage, (int x, int y, int SIHandle), (x, y, SIHandle))
 MKCCDxFN(int, DrawPixelSoftImage, (int SIHandle, int x, int y, int r, int g, int b, int a), (SIHandle, x, y, r, g, b, a))
 MKCCDxFN(int, MakeARGB8ColorSoftImage, (int SizeX, int SizeY), (SizeX, SizeY))
-MKCCDxFN(int, MakeXRGB8ColorSoftImage, (int SizeX, int SizeY), (SizeX, SizeY))
 MKCCDxFN(int, FillSoftImage, (int SIHandle, int r, int g, int b, int a), (SIHandle, r, g, b, a))
 MKCCDxFN(int, DeleteSoftImage, (int SIHandle), (SIHandle))
 MKCCDxFN(int, InitSoftImage, (), ())

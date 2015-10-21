@@ -14,7 +14,8 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 
 ##CCDxLib72で実装した関数一覧
 一部のマイナー関数を除いて殆どの関数を実装しています。  
-2015/10/4 03:17現在 72個    
+2015/10/21 20:04現在 71+8個
+2015/10/4  03:17現在 72個    
 - ウインドウ関係(6)
 	- ` SetGraphMode,ChangeWindowMode,SetMainWindowText,GetScreenState SetDrawArea ClearDrawScreen `
 - 画像描画関係(14)
@@ -27,8 +28,8 @@ Dxlibで書いたコードを殆ど変更せずそのままAndroidやMacなど�
 	- ` GetNowCount GetNowHiPerformanceCount GetDateTime GetRand SRand `
 - ユーザーの入力操作関係(9)
 	- ` CheckHitKeyAll CheckHitKey GetHitKeyStateAll SetMouseDispFlag GetMousePoint GetMouseInput GetMouseWheelRotVol GetTouchInputNum GetTouchInput `
-- CPUに読み込んで画像を扱う系の関数(10)
-	- ` LoadSoftImage GetSoftImageSize GetPixelSoftImage DeleteSoftImage InitSoftImage DrawSoftImage DrawPixelSoftImage MakeARGB8ColorSoftImage MakeXRGB8ColorSoftImage FillSoftImage `
+- CPUに読み込んで画像を扱う系の関数(9)
+	- ` LoadSoftImage GetSoftImageSize GetPixelSoftImage DeleteSoftImage InitSoftImage DrawSoftImage DrawPixelSoftImage MakeARGB8ColorSoftImage FillSoftImage `
 - アプリのファイルの読み込み関数(10)
 	- ` FileRead_open FileRead_size FileRead_close FileRead_tell FileRead_seek FileRead_read FileRead_eof FileRead_gets FileRead_getc FileRead_scanf `
 - 音利用関数(7)

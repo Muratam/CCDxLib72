@@ -1326,15 +1326,7 @@ int CCDxLib::MakeARGB8ColorSoftImage(int SizeX, int SizeY){
 	auto buffer = (unsigned char*)malloc(sizeof(unsigned char) * size);
 	SoftImageHandles[SoftImageHandles.size() - 1].initWithRawData(
 		buffer, sizeof(unsigned char) * size, SizeX, SizeY, 32);
-	return SoftImageHandles.size() - 1;
-}
-int CCDxLib::MakeXRGB8ColorSoftImage(int SizeX, int SizeY){
-	ImagePOOL image;
-	SoftImageHandles.push_back(image);
-	int size = SizeX * SizeY * 3;
-	auto buffer = (unsigned char*)malloc(sizeof(unsigned char) * size);
-	SoftImageHandles[SoftImageHandles.size() - 1].initWithRawData(
-		buffer, sizeof(unsigned char) * size, SizeX, SizeY, 24);
+	free(buffer);
 	return SoftImageHandles.size() - 1;
 }
 int CCDxLib::DrawSoftImage(int x, int y, int SIHandle){
